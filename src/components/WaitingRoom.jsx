@@ -1,6 +1,10 @@
 function WaitingRoom({ roomId, playerName, players, onStartGame }) {
   const canStart = players.length >= 1;
 
+
+  const currentPlayer = players.find(p => p.name === playerName);
+  const isHost = currentPlayer?.role === 'host';
+  
   return (
     <div className="waiting-room">
       <div className="waiting-card">
@@ -37,14 +41,19 @@ function WaitingRoom({ roomId, playerName, players, onStartGame }) {
           </div>
         )}
 
-        <button
-          onClick={onStartGame}
-          disabled={!canStart}
-          //TODO: mettre un bouton pour le host pour commencer la partie
-          className="btn btn-success"
-        >
-          Démarrer la partie
-        </button>
+        {isHost ? (
+          <button
+            onClick={onStartGame}
+            disabled={!canStart}
+            className="btn btn-success"
+          >
+            Démarrer la partie
+          </button>
+        ) : (
+          <div className="waiting-message">
+            <p>⏳ En attente que le host démarre la partie...</p>
+          </div>
+        )}
       </div>
     </div>
   );

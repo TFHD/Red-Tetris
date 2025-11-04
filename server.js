@@ -57,12 +57,14 @@ io.on('connection', (socket) => {
         }
       }
 
+      const isFirst = room.players.size === 0;
+
       room.players.set(socket.id, {
         id: socket.id,
         name: name || 'player',
         score: 0,
         lines: 0,
-        //TODO: mettre un role host / guest
+        role: isFirst ? 'host' : 'guest',
       });
 
       socket.join(roomId);
@@ -70,7 +72,12 @@ io.on('connection', (socket) => {
       ack && ack({ ok: true, roomId, seed: room.gameState.seed });
 
       io.in(roomId).emit('room_update', {
-        players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name, score: p.score }))
+        players: Array.from(room.players.values()).map(p => ({
+          id: p.id,
+          name: p.name,
+          score: p.score,
+          role: p.role
+        }))
       });
     } catch (err) {
       console.error(err);
@@ -106,25 +113,49 @@ io.on('connection', (socket) => {
   socket.on('start_game', ({ roomId }) => {
     const room = rooms.get(roomId);
     if (!room) return;
+
+    const player = room.players.get(socket.id);
+    if (!player || player.role !== 'host') {
+      console.warn(`Player ${socket.id} tried to start game but is not host`);
+      return;
+    }
+
+    if (room.gameState.started) return;
     room.gameState.started = true;
+
     io.in(roomId).emit('game_started', { seed: room.gameState.seed });
   });
 
   socket.on('disconnect', () => {
     console.log('disconnect', socket.id);
-    //TODO: Si l'host se deco en pleine partie, il donne son role a un autre joueur
+    
     for (const [roomId, room] of rooms.entries()) {
-      if (room.players.has(socket.id)) {
-        room.players.delete(socket.id);
-        socket.to(roomId).emit('player_left', { id: socket.id });
-        if (room.players.size === 0) {
-          rooms.delete(roomId);
-        } else {
-          io.in(roomId).emit('room_update', {
-            players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name, score: p.score }))
-          });
-        }
+      const player = room.players.get(socket.id);
+      if (!player) continue;
+      
+      const wasHost = player.role === 'host';
+      room.players.delete(socket.id);
+      socket.to(roomId).emit('player_left', { id: socket.id });
+      
+      if (room.players.size === 0) {
+        rooms.delete(roomId);
+        continue;
       }
+      
+      if (wasHost) {
+        const next = room.players.values().next().value;
+        next.role = 'host';
+        io.in(roomId).emit('host_assigned', { id: next.id, name: next.name });
+      }
+      
+      io.in(roomId).emit('room_update', {
+        players: Array.from(room.players.values()).map(p => ({
+          id: p.id,
+          name: p.name,
+          score: p.score,
+          role: p.role
+        }))
+      });
     }
   });
 });
