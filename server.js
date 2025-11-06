@@ -110,6 +110,20 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('opponent_state', { from: socket.id, state });
   });
 
+  //Gestion de la penalite dans le bacck 
+  socket.on('send_penalty', ({ roomId, lines }) => {
+    console.log(`👉 Player ${socket.id} sending ${lines} penalty lines to room ${roomId}`);
+    
+    const room = rooms.get(roomId);
+    if (!room) return;
+    
+
+    socket.to(roomId).emit('receive_penalty', { 
+      from: socket.id, 
+      lines: lines 
+    });
+  });
+
   socket.on('start_game', ({ roomId }) => {
     const room = rooms.get(roomId);
     if (!room) return;

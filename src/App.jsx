@@ -55,6 +55,13 @@ function App() {
     onPlayerLeft: (player) => {
       console.log('Player left:', player);
     },
+    //pour avoir un message dans le serveur mais ca marche pas
+    onHostAssigned: (data) => {
+    console.log('New host assigned:', data);
+
+    //TEST: j'ai mis une alerte (utilite je sais pas) juste pour etre sur que mon player2 deviennent bien l'host 
+    alert(`👑 ${data.name} est maintenant le host de la room!`);
+  },
   });
 
   useEffect(() => {
