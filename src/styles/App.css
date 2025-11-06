@@ -484,9 +484,3 @@ kbd {
 .penalty-info strong {
   color: #f00000;
 }
-
-/* Couleur pour les blocs gris */
-.grid-cell[style*="rgb(128, 128, 128)"] {
-  border: 1px solid #555;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
-}

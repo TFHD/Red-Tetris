@@ -1,3 +1,6 @@
+export const BOARD_WIDTH = 10;
+export const BOARD_HEIGHT = 20;
+
 export const PIECES = {
   I: [
     [0, 0, 0, 0],
@@ -46,6 +49,7 @@ export const COLORS = {
   Z: '#f00000',
   J: '#0000f0',
   L: '#f0a000',
+  G: '#808080',
   0: 'transparent',
 };
 
@@ -101,7 +105,6 @@ export function calculatePenalty(lines) {
  * @param {number} holePosition - Position du trou (0-9), ou random si non fourni
  */
 export function createPenaltyLine(holePosition) {
-  const BOARD_WIDTH = 10;
   const hole = holePosition !== undefined 
     ? holePosition 
     : Math.floor(Math.random() * BOARD_WIDTH);
@@ -121,7 +124,6 @@ export function createPenaltyLine(holePosition) {
 export function addPenaltyLines(board, count) {
   if (count <= 0) return board;
   
-  const BOARD_HEIGHT = 20;
   const newBoard = [...board];
   
   const penaltyLines = [];

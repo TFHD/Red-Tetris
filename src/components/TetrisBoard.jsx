@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { PIECES, COLORS, addPenaltyLines } from '../utils/tetris';
+import { PIECES, COLORS, addPenaltyLines, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/tetris';
 
-const BOARD_WIDTH = 10;
-const BOARD_HEIGHT = 20;
 
 /**
  * @description Composant TetrisBoard
@@ -132,17 +130,6 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
     
     if (linesCleared > 0) {
       onLinesCleared(linesCleared);
-
-      //Gestion des pénalités envoyées
-      let penaltyLines = 0;
-      if (linesCleared === 2) penaltyLines = 1;
-      else if (linesCleared === 3) penaltyLines = 2;
-      else if (linesCleared === 4) penaltyLines = 4;
-
-      if (penaltyLines > 0) {
-        onSendPenalty?.(penaltyLines);
-        console.log(`⚡ Sending ${penaltyLines} penalty lines to opponent`);
-      }
     }
 
     //=================================================
