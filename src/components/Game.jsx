@@ -24,6 +24,10 @@ function Game({ socket, roomId, playerName, players, seed }) {
   const scoreRef = useRef(0);
   const linesRef = useRef(0);
 
+  //Gestion penalites
+  const [pendingPenalty, setPendingPenalty] = useState(0);
+  const [penaltyNotification, setPenaltyNotification] = useState(null);
+
   const [pieceGenerator] = useState(() => createPieceGenerator(seed));
 
   scoreRef.current = score;
@@ -44,12 +48,22 @@ function Game({ socket, roomId, playerName, players, seed }) {
       }
     });
 
-    socket.on('opponent_input', (data) => {
-      console.log('Opponent input:', data.input);
+    socket.on('receive_penalty', (data) => {
+      console.log(`⚡ Received ${data.lines} penalty lines from opponent!`);
+      
+      // compteur de pénalités
+      setPendingPenalty(prev => prev + data.lines);
+      
+      //notification
+      setPenaltyNotification(`+${data.lines} ligne${data.lines > 1 ? 's' : ''} 💀`);
+      setTimeout(() => setPenaltyNotification(null), 2000);
+      
+      //Ca pour eviter des problemes
+      setTimeout(() => setPendingPenalty(0), 100);
     });
 
-    socket.on('receive_penalty', (data) => {
-      console.log('Received penalty:', data.lines, 'lines');
+    socket.on('opponent_input', (data) => {
+      console.log('Opponent input:', data.input);
     });
 
     socket.on('game_over', (data) => {
@@ -97,11 +111,30 @@ function Game({ socket, roomId, playerName, players, seed }) {
     currentBoardRef.current = board;
   }, []);
 
+  //Gestion de penalites
+  const handleSendPenalty = useCallback((penaltyLines) => {
+    if (!socket || gameOver) return;
+    
+    socket.emit('send_penalty', { roomId, lines: penaltyLines });
+  }, [socket, roomId, gameOver]);
+
   const handleLinesCleared = useCallback((count) => {
     setLines((prev) => prev + count);
     setScore((prev) => prev + calculateScore(count));
     // TODO: Faudra faire un ptit systeme de penalite
-  }, [socket]);
+
+    //Gestion des pénalités envoyées
+    let penaltyLines = 0;
+    if (count === 2) penaltyLines = 1;
+    else if (count === 3) penaltyLines = 2;
+    else if (count === 4) penaltyLines = 4;
+
+    if (penaltyLines > 0) {
+      handleSendPenalty?.(penaltyLines);
+      console.log(`⚡ Sending ${penaltyLines} penalty lines to opponent`);
+    }
+  }, [handleSendPenalty]);
+  
 
   const handleGameOver = useCallback(() => {
     setGameOver(true);
@@ -112,6 +145,11 @@ function Game({ socket, roomId, playerName, players, seed }) {
 
   return (
     <div className="game">
+      {penaltyNotification && (
+        <div className="penalty-notification">
+          {penaltyNotification}
+        </div>
+      )}
       <div className="game-container">
         <div className="player-section">
           <div className="player-info">
@@ -127,6 +165,8 @@ function Game({ socket, roomId, playerName, players, seed }) {
             onInput={handleInput}
             onStateUpdate={handleStateUpdate}
             onLinesCleared={handleLinesCleared}
+            onSendPenalty={handleSendPenalty} //Penalite
+            pendingPenalty={pendingPenalty} //Penalite
             gameOver={gameOver}
             onGameOver={handleGameOver}
           />
@@ -164,6 +204,12 @@ function Game({ socket, roomId, playerName, players, seed }) {
           <li><kbd>↓</kbd> : Descente rapide</li>
           <li><kbd>Espace</kbd> : Hard drop</li>
         </ul>
+        <div className="penalty-info">
+          <p><strong>💀 Pénalités :</strong></p>
+          <p>2 lignes → 1 ligne grise</p>
+          <p>3 lignes → 2 lignes grises</p>
+          <p>4 lignes → 4 lignes grises 🔥</p>
+        </div>
       </div>
     </div>
   );

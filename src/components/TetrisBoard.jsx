@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { PIECES, COLORS } from '../utils/tetris';
+import { PIECES, COLORS, addPenaltyLines, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/tetris';
 
-const BOARD_WIDTH = 10;
-const BOARD_HEIGHT = 20;
 
 /**
  * @description Composant TetrisBoard
@@ -14,7 +12,7 @@ const BOARD_HEIGHT = 20;
  * @param {function} onGameOver - Fonction appelée lorsque le jeu est terminé
  * @returns {JSX.Element} - Composant TetrisBoard
  */
-function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, gameOver, onGameOver }) {
+function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, onSendPenalty, pendingPenalty, gameOver, onGameOver }) {
   const [board, setBoard] = useState(() => 
     Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0))
   );
@@ -27,8 +25,16 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, g
 
   stateRef.current = { currentPiece, position, board, gameOver, isPaused };
 
+  //Generqtion des pieces 
+  useEffect(() => {
+    if (pendingPenalty > 0 && !gameOver) {
+      console.log(`⚡ Receiving ${pendingPenalty} penalty lines!`);
+      setBoard(prevBoard => addPenaltyLines(prevBoard, pendingPenalty));
+    }
+  }, [pendingPenalty, gameOver]);
+
   /**
-   * Génère une nouvelle pièce
+   * Génère une nouvelle pièce 
    */
   const generateNewPiece = useCallback(() => {
     const type = pieceGenerator();
@@ -36,8 +42,8 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, g
       type,
       shape: PIECES[type],
       color: COLORS[type],
-    };
-  }, [pieceGenerator]);
+    };  
+  }, [pieceGenerator]);  
 
 
   /**

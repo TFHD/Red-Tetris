@@ -1,3 +1,6 @@
+export const BOARD_WIDTH = 10;
+export const BOARD_HEIGHT = 20;
+
 export const PIECES = {
   I: [
     [0, 0, 0, 0],
@@ -46,6 +49,7 @@ export const COLORS = {
   Z: '#f00000',
   J: '#0000f0',
   L: '#f0a000',
+  G: '#808080',
   0: 'transparent',
 };
 
@@ -84,3 +88,52 @@ export function calculateScore(lines) {
   return scoreTable[lines] || 0;
 }
 
+//regle de penalite pris sur un jeu de tetris de la nintendo
+
+export function calculatePenalty(lines) {
+  const penaltyTable = {
+    1: 0,  
+    2: 1,  
+    3: 2,  
+    4: 4,  
+  };
+  return penaltyTable[lines] || 0;
+}
+
+/**
+ * Crée une ligne grise avec un trou aléatoire
+ * @param {number} holePosition - Position du trou (0-9), ou random si non fourni
+ */
+export function createPenaltyLine(holePosition) {
+  const hole = holePosition !== undefined 
+    ? holePosition 
+    : Math.floor(Math.random() * BOARD_WIDTH);
+  
+  const line = Array(BOARD_WIDTH).fill('G');
+  line[hole] = 0;
+  
+  return line;
+}
+
+/**
+ * Ajoute des lignes de pénalité en bas du plateau
+ * @param {Array} board - Plateau actuel
+ * @param {number} count - Nombre de lignes à ajouter
+ * @returns {Array} - Nouveau plateau avec pénalités
+ */
+export function addPenaltyLines(board, count) {
+  if (count <= 0) return board;
+  
+  const newBoard = [...board];
+  
+  const penaltyLines = [];
+  for (let i = 0; i < count; i++) {
+    penaltyLines.push(createPenaltyLine());
+  }
+  
+  newBoard.splice(0, count);
+  
+  newBoard.push(...penaltyLines);
+  
+  return newBoard;
+}

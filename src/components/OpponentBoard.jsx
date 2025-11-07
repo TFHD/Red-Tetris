@@ -6,6 +6,7 @@ const COLORS = {
   Z: '#f00000',
   J: '#0000f0',
   L: '#f0a000',
+  G: '#808080',
   0: 'transparent',
 };
 
