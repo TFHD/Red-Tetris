@@ -11,21 +11,29 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const server = createServer(app);
+
+const isProduction = process.env.NODE_ENV === 'production';
+const PORT = process.env.PORT || 3000;
+
+if (isProduction) {
+  const clientPath = join(__dirname, '..', 'client');
+  app.use(express.static(clientPath));
+  
+  app.get('/:room/:player', (req, res) => {
+    res.sendFile(join(clientPath, 'index.html'));
+  });
+  
+  app.get('/', (req, res) => {
+    res.sendFile(join(clientPath, 'index.html'));
+  });
+}
+
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3001',
+    origin: isProduction ? false : 'http://localhost:3001',
     methods: ['GET', 'POST'],
   },
 });
-
-const PORT = process.env.PORT || 3000;
-
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(join(__dirname, 'dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(join(__dirname, 'dist', 'index.html'));
-  });
-}
 
 const rooms = new Map<string, Room>();
 
