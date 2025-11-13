@@ -1,7 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import TetrisBoard from './TetrisBoard';
 import OpponentBoard from './OpponentBoard';
-import { createPieceGenerator, calculateScore } from '../utils/tetris';
+import NextPieces from './NextPieces';
+import { createPieceGenerator, calculateScore, calculatePenalty } from '../utils/tetris';
+import { Player, CellValue } from '../types';
+import { Socket } from 'socket.io-client';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 
 //TODO: Rajouter un bouton restart 
 
@@ -11,22 +15,28 @@ import { createPieceGenerator, calculateScore } from '../utils/tetris';
  * @param {string} roomId - ID de la room
  * @param {string} playerName - Nom du joueur
  * @param {Array} players - Liste des joueurs
- * @param {number} seed - Seed pour le générateur de pièces
  * @returns {JSX.Element} - Composant Game
  */
-function Game({ socket, roomId, playerName, players, seed }) {
+function Game({ socket, roomId, playerName, players, seed } :
+  { socket : Socket<DefaultEventsMap, DefaultEventsMap>,
+    roomId : string,
+    playerName : string,
+    players : Player[],
+    seed : number,
+  }) {
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [opponentBoard, setOpponentBoard] = useState(null);
+  const [opponentBoard, setOpponentBoard] = useState<CellValue[][]>([]);
   const [opponentStats, setOpponentStats] = useState({ score: 0, lines: 0 });
-  const currentBoardRef = useRef(null);
+  const currentBoardRef = useRef<CellValue[][]>([]);
   const scoreRef = useRef(0);
   const linesRef = useRef(0);
-
   //Gestion penalites
-  const [pendingPenalty, setPendingPenalty] = useState(0);
-  const [penaltyNotification, setPenaltyNotification] = useState(null);
+  const [pendingPenalty, setPendingPenalty] = useState<number>(0);
+  const [penaltyNotification, setPenaltyNotification] = useState<string | null>(null);
+  // Prochaines pièces
+  const [nextPieces, setNextPieces] = useState<string[]>([]);
 
   const [pieceGenerator] = useState(() => createPieceGenerator(seed));
 
@@ -62,20 +72,9 @@ function Game({ socket, roomId, playerName, players, seed }) {
       setTimeout(() => setPendingPenalty(0), 100);
     });
 
-    socket.on('opponent_input', (data) => {
-      console.log('Opponent input:', data.input);
-    });
-
-    socket.on('game_over', (data) => {
-      console.log('Game over:', data);
-      setGameOver(true);
-    });
-
     return () => {
       socket.off('opponent_state');
-      socket.off('opponent_input');
       socket.off('receive_penalty');
-      socket.off('game_over');
     };
   }, [socket]);
 
@@ -90,6 +89,7 @@ function Game({ socket, roomId, playerName, players, seed }) {
             board: currentBoardRef.current,
             score: scoreRef.current,
             lines: linesRef.current,
+            gameOver: gameOver,
           } 
         });
       }
@@ -98,48 +98,53 @@ function Game({ socket, roomId, playerName, players, seed }) {
     return () => clearInterval(interval);
   }, [socket, roomId, gameOver]);
 
-  const handleInput = useCallback((input) => {
-    if (!socket || gameOver) return;
+  const handleInput = useCallback(async () => {
+    if (!socket || gameOver) return false;
     
-    socket.emit('input', { roomId, input }, (ack) => {
+    try {
+      const ack = await socket.emitWithAck('input', { roomId });
       if (!ack?.ok)
-        console.error('Input rejected:', ack);
-    });
+        return false;
+      return true;
+    } catch (error) { return false; }
   }, [socket, roomId, gameOver]);
 
-  const handleStateUpdate = useCallback((board) => {
+  const handleStateUpdate = useCallback((board : CellValue[][]) => {
     currentBoardRef.current = board;
   }, []);
 
-  //Gestion de penalites
-  const handleSendPenalty = useCallback((penaltyLines) => {
-    if (!socket || gameOver) return;
-    
-    socket.emit('send_penalty', { roomId, lines: penaltyLines });
-  }, [socket, roomId, gameOver]);
+  const handleLinesCleared = useCallback((count : number) => {
+    setLines((prev : number) => prev + count);
+    setScore((prev : number) => prev + calculateScore(count));
 
-  const handleLinesCleared = useCallback((count) => {
-    setLines((prev) => prev + count);
-    setScore((prev) => prev + calculateScore(count));
-    // TODO: Faudra faire un ptit systeme de penalite
+    const penaltyLines = calculatePenalty(count);
 
-    //Gestion des pénalités envoyées
-    let penaltyLines = 0;
-    if (count === 2) penaltyLines = 1;
-    else if (count === 3) penaltyLines = 2;
-    else if (count === 4) penaltyLines = 4;
-
-    if (penaltyLines > 0) {
-      handleSendPenalty?.(penaltyLines);
+    if (socket && penaltyLines > 0) {
+      socket.emit('send_penalty', { roomId, lines: penaltyLines });
       console.log(`⚡ Sending ${penaltyLines} penalty lines to opponent`);
     }
-  }, [handleSendPenalty]);
+  }, [socket, roomId]);
   
 
   const handleGameOver = useCallback(() => {
     setGameOver(true);
-    socket.emit('game_over', { roomId });
+    socket.emit('sync_state', {
+      roomId,
+      state: { 
+        board: currentBoardRef.current,
+        score: scoreRef.current,
+        lines: linesRef.current,
+        gameOver: gameOver,
+      }
+    });
+    socket.emit('end_game', { roomId });
   }, [socket, roomId]);
+
+  const speed = Math.max(100, 1000 - (lines * 20));
+
+  const handleNextPiecesUpdate = useCallback((pieces: string[]) => {
+    setNextPieces(pieces);
+  }, []);
 
   const opponent = players.find(p => p.name !== playerName);
 
@@ -151,6 +156,10 @@ function Game({ socket, roomId, playerName, players, seed }) {
         </div>
       )}
       <div className="game-container">
+        <div className="next-pieces-sidebar">
+          <NextPieces nextPieces={nextPieces} />
+        </div>
+
         <div className="player-section">
           <div className="player-info">
             <h3>👤 {playerName} (Vous)</h3>
@@ -165,10 +174,11 @@ function Game({ socket, roomId, playerName, players, seed }) {
             onInput={handleInput}
             onStateUpdate={handleStateUpdate}
             onLinesCleared={handleLinesCleared}
-            onSendPenalty={handleSendPenalty} //Penalite
-            pendingPenalty={pendingPenalty} //Penalite
+            pendingPenalty={pendingPenalty}
             gameOver={gameOver}
             onGameOver={handleGameOver}
+            speed={speed}
+            onNextPiecesUpdate={handleNextPiecesUpdate}
           />
 
           {gameOver && (

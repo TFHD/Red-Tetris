@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { PIECES, COLORS, addPenaltyLines, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/tetris';
+import { Piece, Position, CellValue } from '../types';
 
 
 /**
@@ -12,18 +13,41 @@ import { PIECES, COLORS, addPenaltyLines, BOARD_WIDTH, BOARD_HEIGHT } from '../u
  * @param {function} onGameOver - Fonction appelée lorsque le jeu est terminé
  * @returns {JSX.Element} - Composant TetrisBoard
  */
-function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, onSendPenalty, pendingPenalty, gameOver, onGameOver }) {
-  const [board, setBoard] = useState(() => 
-    Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0))
-  );
-  const [currentPiece, setCurrentPiece] = useState(null);
-  const [position, setPosition] = useState({ x: 3, y: 0 });
-  const [isPaused, setIsPaused] = useState(false);
+interface TetrisBoardProps {
+  pieceGenerator: () => string;
+  onInput: () => Promise<boolean>;
+  onStateUpdate: (board: CellValue[][]) => void;
+  onLinesCleared: (count: number) => void;
+  pendingPenalty: number;
+  gameOver: boolean;
+  onGameOver: () => void;
+  speed: number;
+  onNextPiecesUpdate?: (pieces: string[]) => void;
+}
 
-  const intervalRef = useRef(null);
+function TetrisBoard({
+  pieceGenerator,
+  onInput,
+  onStateUpdate,
+  onLinesCleared,
+  pendingPenalty,
+  gameOver,
+  onGameOver,
+  speed,
+  onNextPiecesUpdate,
+}: TetrisBoardProps) {
+  const [board, setBoard] = useState(() => 
+    Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)) as CellValue[][]
+  );
+  const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
+  const [position, setPosition] = useState<Position>({ x: 3, y: 0 });
+  const [isPaused, setIsPaused] = useState(false);
+  const [nextPieces, setNextPieces] = useState<string[]>([]);
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const stateRef = useRef({ currentPiece, position, board, gameOver, isPaused });
 
-  stateRef.current = { currentPiece, position, board, gameOver, isPaused };
+  stateRef.current = { currentPiece, position, board, gameOver, isPaused, };
 
   //Generqtion des pieces 
   useEffect(() => {
@@ -36,35 +60,76 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
   /**
    * Génère une nouvelle pièce 
    */
-  const generateNewPiece = useCallback(() => {
+  const generateNewPiece : () => Piece = useCallback(() => {
     const type = pieceGenerator();
     return {
       type,
       shape: PIECES[type],
       color: COLORS[type],
-    };  
-  }, [pieceGenerator]);  
+    } as Piece;  
+  }, [pieceGenerator]);
 
+  /**
+   * Initialise les 5 prochaines pièces
+   */
+  const initNextPieces = useCallback(() => {
+    const pieces: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      pieces.push(pieceGenerator());
+    }
+    setNextPieces(pieces);
+    onNextPiecesUpdate?.(pieces);
+  }, [pieceGenerator, onNextPiecesUpdate]);
+
+  /**
+   * Prend la prochaine pièce de la file et en génère une nouvelle
+   */
+  const getNextPiece = useCallback((): Piece => {
+    if (nextPieces.length === 0) {
+      return generateNewPiece();
+    }
+    
+    const type = nextPieces[0]!;
+    const newNextPieces = [...nextPieces.slice(1), pieceGenerator()];
+    setNextPieces(newNextPieces);
+    onNextPiecesUpdate?.(newNextPieces);
+    
+    return {
+      type,
+      shape: PIECES[type],
+      color: COLORS[type],
+    } as Piece;
+  }, [nextPieces, pieceGenerator, onNextPiecesUpdate, generateNewPiece]);  
+
+
+  /**
+   * Initialise les prochaines pièces au démarrage
+   */
+  useEffect(() => {
+    if (nextPieces.length === 0 && !gameOver) {
+      initNextPieces();
+    }
+  }, [nextPieces.length, initNextPieces, gameOver]);
 
   /**
    * Initialise la première pièce
    */
   useEffect(() => {
-    if (!currentPiece && !gameOver) {
-      setCurrentPiece(generateNewPiece());
+    if (!currentPiece && !gameOver && nextPieces.length > 0) {
+      setCurrentPiece(getNextPiece());
     }
-  }, [currentPiece, generateNewPiece, gameOver]);
+  }, [currentPiece, gameOver, nextPieces.length]);
 
 
   /**
    * Vérifie les collisions entre la pièce et le board
    */
-  const checkCollision = useCallback((piece, pos, boardState) => {
+  const checkCollision = useCallback((piece: Piece | null, pos: Position, boardState: CellValue[][]) => {
     if (!piece) return true;
     
     for (let y = 0; y < piece.shape.length; y++) {
-      for (let x = 0; x < piece.shape[y].length; x++) {
-        if (piece.shape[y][x]) {
+      for (let x = 0; x < piece.shape[y]!.length; x++) {
+        if (piece.shape[y]![x]) {
           const newX = pos.x + x;
           const newY = pos.y + y;
           
@@ -72,7 +137,7 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
             newX < 0 || 
             newX >= BOARD_WIDTH || 
             newY >= BOARD_HEIGHT ||
-            (newY >= 0 && boardState[newY][newX])
+            (newY >= 0 && boardState[newY]![newX])
           ) {
             return true;
           }
@@ -87,7 +152,7 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
    * Fusionne la pièce avec le board
    * @param {Object} overridePos - Position à utiliser (optionnelle, pour le hard drop)
    */
-  const mergePiece = useCallback((overridePos = null) => {
+  const mergePiece = useCallback((overridePos: Position | null = null) => {
     const { currentPiece: piece, position: pos, board: brd } = stateRef.current;
     
     const finalPos = overridePos || pos;
@@ -101,12 +166,12 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
     const newBoard = brd.map(row => [...row]);
     
     for (let y = 0; y < piece.shape.length; y++) {
-      for (let x = 0; x < piece.shape[y].length; x++) {
-        if (piece.shape[y][x]) {
+      for (let x = 0; x < piece.shape[y]!.length; x++) {
+        if (piece.shape[y]![x]) {
           const boardY = finalPos.y + y;
           const boardX = finalPos.x + x;
           if (boardY >= 0 && boardY < BOARD_HEIGHT) {
-            newBoard[boardY][boardX] = piece.type;
+            newBoard[boardY]![boardX] = piece.type as CellValue;
           }
         }
       }
@@ -118,7 +183,7 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
 
     let linesCleared = 0;
     const clearedBoard = newBoard.filter(row => {
-      const isFull = row.every(cell => cell !== 0);
+      const isFull = row.every((cell : CellValue) => cell !== 0);
       if (isFull) linesCleared++;
       return !isFull;
     });
@@ -136,7 +201,7 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
     // THIRD PART : CHECK GAME OVER
     //=================================================
 
-    const newPiece = generateNewPiece();
+    const newPiece = getNextPiece();
     const newPos = { x: 3, y: 0 };
     
     if (checkCollision(newPiece, newPos, clearedBoard)) {
@@ -146,11 +211,11 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
       setCurrentPiece(newPiece);
       setPosition(newPos);
     }
-  }, [generateNewPiece, checkCollision, onLinesCleared, onStateUpdate]);
+  }, [getNextPiece, checkCollision, onLinesCleared, onStateUpdate]);
 
 
   /**
-   * Démarre le timer
+   * Démarre le timer avec la vitesse actuelle
    */
   const startTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -166,7 +231,7 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
         isPaused: paused
       } = stateRef.current;
       
-      if (over || paused || !piece) return;
+      if (over || paused || !piece ) return;
 
       const newPos = { ...pos, y: pos.y + 1 };
       
@@ -175,8 +240,8 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
       } else {
         setPosition(newPos);
       }
-    }, 1000);
-  }, [checkCollision, mergePiece]);
+    }, speed);
+  }, [checkCollision, mergePiece, speed]);
 
 
   /**
@@ -189,18 +254,23 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
     }
   }, []);
 
+  /**
+   * Redémarre le timer quand la vitesse change
+   */
   useEffect(() => {
-    startTimer();
+    if (!gameOver) {
+      startTimer();
+    }
     
     return () => stopTimer();
-  }, []);
+  }, [startTimer, gameOver]);
 
 
   /**
    * Gère les inputs clavier
    */
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = async (e : KeyboardEvent) => {
       const { currentPiece: piece, position: pos, board: brd, gameOver: over } = stateRef.current;
       
       if (over || !piece) return;
@@ -210,29 +280,29 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
 
       switch (e.key) {
         case 'ArrowLeft':
-          newPos.x -= 1;
-          onInput?.({ type: 'move', direction: 'left' });
+          if (await onInput())
+            newPos.x -= 1;
           break;
         case 'ArrowRight':
-          newPos.x += 1;
-          onInput?.({ type: 'move', direction: 'right' });
+          if (await onInput())
+            newPos.x += 1;
           break;
         case 'ArrowDown':
-          newPos.y += 1;
-          onInput?.({ type: 'move', direction: 'down' });
+          if (await onInput())
+            newPos.y += 1;
           break;
         case 'ArrowUp':
-          newPiece = {
-            ...piece,
-            shape: rotate(piece.shape),
-          };
-          onInput?.({ type: 'rotate' });
+          if (await onInput())
+            newPiece = {
+              ...piece,
+              shape: rotate(piece.shape),
+            };
           break;
         case ' ':
-          while (!checkCollision(piece, { ...newPos, y: newPos.y + 1 }, brd)) {
-            newPos.y += 1;
+          if (await onInput()) {
+            while (!checkCollision(newPiece, { ...newPos, y: newPos.y + 1 }, brd))
+              newPos.y += 1;
           }
-          onInput?.({ type: 'hard_drop' });
           break;
         default:
           return;
@@ -261,13 +331,13 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
    * Effectue une rotation de 90° sens horaire autour du point pivot (point blanc)
    * Les pièces Tetris tournent dans une grille carrée (3x3 ou 4x4) go voir utils/tetris.js
    */
-  const rotate = (matrix) => {
+  const rotate = (matrix : number[][]) => {
     const N = matrix.length;
-    const rotated = Array(N).fill(null).map(() => Array(N).fill(0));
+    const rotated = Array(N).fill(null).map(() => Array(N).fill(0)) as number[][];
     
     for (let y = 0; y < N; y++) {
       for (let x = 0; x < N; x++) {
-        rotated[x][N - 1 - y] = matrix[y][x];
+        rotated[x]![N - 1 - y] = matrix[y]![x]! ;
       }
     }
     
@@ -283,12 +353,12 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
     
     if (currentPiece) {
       for (let y = 0; y < currentPiece.shape.length; y++) {
-        for (let x = 0; x < currentPiece.shape[y].length; x++) {
-          if (currentPiece.shape[y][x]) {
+        for (let x = 0; x < currentPiece.shape[y]!.length; x++) {
+          if (currentPiece.shape[y]![x]) {
             const boardY = position.y + y;
             const boardX = position.x + x;
             if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
-              visual[boardY][boardX] = currentPiece.type;
+              visual[boardY]![boardX] = currentPiece.type as CellValue;
             }
           }
         }
@@ -321,7 +391,7 @@ function TetrisBoard({ pieceGenerator, onInput, onStateUpdate, onLinesCleared, o
                 key={`${y}-${x}`}
                 className={`grid-cell ${cell ? 'filled' : 'empty'}`}
                 style={{
-                  backgroundColor: cell ? COLORS[cell] : 'transparent',
+                  backgroundColor: cell ? COLORS[String(cell)] : 'transparent',
                 }}
               />
             ))}

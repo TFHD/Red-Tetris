@@ -4,6 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { Room, Player, GameState } from '../types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,19 +27,17 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-const rooms = new Map();
+const rooms = new Map<string, Room>();
 
-function ensureRoom(roomId) {
+function ensureRoom(roomId: string): Room {
   if (!rooms.has(roomId)) {
     rooms.set(roomId, {
       players: new Map(),
-      gameState: {
-        seed: Date.now(),
-        started: false
-      }
+      seed: Date.now(),
+      started: false
     });
   }
-  return rooms.get(roomId);
+  return rooms.get(roomId) as Room;
 }
 
 io.on('connection', (socket) => {
@@ -49,33 +48,38 @@ io.on('connection', (socket) => {
     try {
       const room = ensureRoom(roomId);
       if (room.players.size >= 2) {
-        return ack && ack({ ok: false, reason: 'room_full' });
+        return ack && ack({ ok: false, roomId, reason: 'room_full' });
       }
       for (const player of room.players.values()) {
         if (player.name === name) {
-          return ack && ack({ ok: false, reason: 'name_already_taken' });
+          return ack && ack({ ok: false, roomId, reason: 'name_already_taken' });
         }
       }
 
       const isFirst = room.players.size === 0;
 
+
       room.players.set(socket.id, {
         id: socket.id,
         name: name || 'player',
+        role: isFirst ? 'host' : 'guest',
+        lastState: null,
         score: 0,
         lines: 0,
-        role: isFirst ? 'host' : 'guest',
+        gameOver: false
       });
 
       socket.join(roomId);
       socket.to(roomId).emit('player_joined', { id: socket.id, name });
-      ack && ack({ ok: true, roomId, seed: room.gameState.seed });
+      ack && ack({ ok: true, roomId, seed: room.seed });
 
       io.in(roomId).emit('room_update', {
-        players: Array.from(room.players.values()).map(p => ({
+        players: Array.from(room.players.values()).map((p: Player) => ({
           id: p.id,
           name: p.name,
           score: p.score,
+          lines: p.lines,
+          gameOver: p.gameOver,
           role: p.role
         }))
       });
@@ -85,28 +89,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('input', ({ roomId, input }, ack) => {
+  socket.on('input', ({ roomId }, ack) => {
     const room = rooms.get(roomId);
     if (!room) return ack && ack({ ok: false, reason: 'no_room' });
-
-    socket.to(roomId).emit('opponent_input', { from: socket.id, input });
 
     ack && ack({ ok: true });
   });
 
-  socket.on('sync_state', ({ roomId, state }) => {
+  socket.on('sync_state', ({ roomId, state }: { roomId: string, state: GameState }, ack) => {
     const room = rooms.get(roomId);
     if (!room) return;
-    const player = room.players.get(socket.id);
+    let player = room.players.get(socket.id);
     if (!player) return;
-    
-    player.lastState = state;
-    
-    if (state.score !== undefined)
-      player.score = state.score;
-    if (state.lines !== undefined)
-      player.lines = state.lines;
-    
+
+    player = { ...player, ...state };
     socket.to(roomId).emit('opponent_state', { from: socket.id, state });
   });
 
@@ -134,10 +130,28 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (room.gameState.started) return;
-    room.gameState.started = true;
+    if (room.started) {
+      console.warn(`Room ${roomId} already started`);
+      return;
+    }
+    room.started = true;
 
-    io.in(roomId).emit('game_started', { seed: room.gameState.seed });
+    io.in(roomId).emit('game_started', { seed: room.seed });
+  });
+
+  socket.on('end_game', ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const gameOverPlayers = Array.from(room.players.values()).map((p: Player) => p.gameOver)
+
+    if (gameOverPlayers.length == room.players.size) {
+      room.started = false;
+      io.in(roomId).emit('game_ended');
+    }
+
+    return;
+
   });
 
   socket.on('disconnect', () => {
@@ -158,6 +172,7 @@ io.on('connection', (socket) => {
       
       if (wasHost) {
         const next = room.players.values().next().value;
+        if (!next) continue;
         next.role = 'host';
         io.in(roomId).emit('host_assigned', { id: next.id, name: next.name });
       }

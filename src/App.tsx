@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useSocket } from './hooks/useSocket';
 import Game from './components/Game';
 import WaitingRoom from './components/WaitingRoom';
+import { JoinResponse, Player } from './types';
 
 function App() {
   const [gameState, setGameState] = useState('connecting'); // 'connecting' | 'waiting' | 'playing' | 'error'
   const [roomId, setRoomId] = useState('');
   const [playerName, setPlayerName] = useState('');
-  const [players, setPlayers] = useState([]);
-  const [seed, setSeed] = useState(null);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [seed, setSeed] = useState<number>(0);
   const [error, setError] = useState('');
 
   // Parser l'URL : /:room/:playerName
@@ -18,8 +19,8 @@ function App() {
     
     if (parts.length >= 2) {
       const [room, name] = parts;
-      setRoomId(decodeURIComponent(room));
-      setPlayerName(decodeURIComponent(name));
+      setRoomId(decodeURIComponent(room || ''));
+      setPlayerName(decodeURIComponent(name || ''));
       setGameState('connecting');
     } else if (parts.length === 0) {
       setGameState('home');
@@ -67,7 +68,7 @@ function App() {
   useEffect(() => {
     if (socket && socketConnected && roomId && playerName && gameState === 'connecting') {
       console.log('Auto-joining room:', roomId, 'as', playerName);
-      socket.emit('join', { roomId, name: playerName }, (response) => {
+      socket.emit('join', { roomId, name: playerName }, (response : JoinResponse) => {
         if (response && response.ok) {
           setSeed(response.seed);
           setGameState('waiting');
@@ -175,7 +176,7 @@ function App() {
           />
         ) : (
           <Game
-            socket={socket}
+            socket={socket!}
             roomId={roomId}
             playerName={playerName}
             players={players}

@@ -1,16 +1,7 @@
-const COLORS = {
-  I: '#00f0f0',
-  O: '#f0f000',
-  T: '#a000f0',
-  S: '#00f000',
-  Z: '#f00000',
-  J: '#0000f0',
-  L: '#f0a000',
-  G: '#808080',
-  0: 'transparent',
-};
+import { COLORS } from '../utils/tetris';
+import { CellValue } from '../types';
 
-function OpponentBoard({ board }) {
+function OpponentBoard({ board } : { board : CellValue[][] }) {
   if (!board || !Array.isArray(board)) {
     return (
       <div className="opponent-placeholder">
@@ -21,14 +12,14 @@ function OpponentBoard({ board }) {
 
   return (
     <div className="opponent-grid">
-      {board.map((row, y) => (
+      {board.map((row : CellValue[], y : number) => (
         <div key={y} className="opponent-row">
-          {row.map((cell, x) => (
+          {row.map((cell : CellValue, x : number) => (
             <div
               key={`${y}-${x}`}
               className={`opponent-cell ${cell ? 'filled' : 'empty'}`}
               style={{
-                backgroundColor: cell ? COLORS[cell] : 'transparent',
+                backgroundColor: cell ? COLORS[String(cell)] : 'transparent',
               }}
             />
           ))}

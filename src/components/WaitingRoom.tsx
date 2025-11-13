@@ -1,4 +1,16 @@
-function WaitingRoom({ roomId, playerName, players, onStartGame }) {
+import { Player } from "../types";
+
+function WaitingRoom({
+  roomId,
+  playerName,
+  players,
+  onStartGame,
+} : {
+  roomId : string,
+  playerName : string,
+  players : Player[],
+  onStartGame : () => void,
+}) {
   const canStart = players.length >= 1;
 
 

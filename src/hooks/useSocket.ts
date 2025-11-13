@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import { SocketHandlers } from '../types';
 
 //TODO: Y'a pleins de route ici qui servent pas a grand chose mais qu'on pourra utiliser plus tard
 
@@ -11,8 +12,8 @@ import { io } from 'socket.io-client';
  * @param {object} handlers - Handlers pour les événements
  * @returns {Socket} - Instance du socket
  */
-export function useSocket(url, handlers = {}) {
-  const [socket, setSocket] = useState(null);
+export function useSocket(url: string, handlers: SocketHandlers) {
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const socketInstance = io(url, {
@@ -48,10 +49,6 @@ export function useSocket(url, handlers = {}) {
 
     socketInstance.on('game_started', (data) => {
       handlers.onGameStarted?.(data);
-    });
-
-    socketInstance.on('opponent_input', (data) => {
-      handlers.onOpponentInput?.(data);
     });
 
     socketInstance.on('opponent_state', (data) => {
