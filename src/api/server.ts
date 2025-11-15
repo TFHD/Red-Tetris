@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { Room, Player, GameState } from '../types.js';
+import { ensureRoom, validateGameState } from './gameLogic.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -37,24 +38,13 @@ const io = new Server(server, {
 
 const rooms = new Map<string, Room>();
 
-function ensureRoom(roomId: string): Room {
-  if (!rooms.has(roomId)) {
-    rooms.set(roomId, {
-      players: new Map(),
-      seed: Date.now(),
-      started: false
-    });
-  }
-  return rooms.get(roomId) as Room;
-}
-
 io.on('connection', (socket) => {
   console.log('connect', socket.id);
 
   socket.on('join', ({ roomId, name }, ack) => {
     console.log('join', roomId, name);
     try {
-      const room = ensureRoom(roomId);
+      const room = ensureRoom(roomId, rooms);
       if (room.players.size >= 2) {
         return ack && ack({ ok: false, roomId, reason: 'room_full' });
       }
@@ -104,14 +94,28 @@ io.on('connection', (socket) => {
     ack && ack({ ok: true });
   });
 
-  socket.on('sync_state', ({ roomId, state }: { roomId: string, state: GameState }, ack) => {
+  socket.on('sync_state', ({ roomId, state }: { roomId: string, state: GameState & { score?: number, lines?: number, gameOver?: boolean } }, ack) => {
     const room = rooms.get(roomId);
-    if (!room) return;
-    let player = room.players.get(socket.id);
-    if (!player) return;
+    if (!room) return ack && ack({ ok: false, reason: 'room_not_found' });
 
-    player = { ...player, ...state };
+    let player = room.players.get(socket.id);
+    if (!player) return ack && ack({ ok: false, reason: 'player_not_found' });
+
+    const isValid = validateGameState(player, state);
+    
+    if (!isValid) {
+      console.warn(`Invalid game state from ${socket.id} in room ${roomId}`);
+      return ack && ack({ ok: false, reason: 'invalid_state' });
+    }
+
+    if (state.score !== undefined) player.score = state.score;
+    if (state.lines !== undefined) player.lines = state.lines;
+    if (state.gameOver !== undefined) player.gameOver = state.gameOver;
+    player.lastState = state;
+
     socket.to(roomId).emit('opponent_state', { from: socket.id, state });
+    
+    ack && ack({ ok: true });
   });
 
   //Gestion de la penalite dans le bacck 
