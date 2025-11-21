@@ -1,4 +1,4 @@
-import { PIECES, COLORS } from '../utils/tetris';
+import { PIECES, COLORS } from '../utils/tetris.js';
 
 interface NextPiecesProps {
   nextPieces: string[];

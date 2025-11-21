@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import OpponentBoard from './OpponentBoard';
-import { CellValue } from '../types';
+import OpponentBoard from './OpponentBoard.js';
+import { CellValue } from '../types.js';
 
 describe('OpponentBoard Component', () => {
   it('devrait render un board vide', () => {

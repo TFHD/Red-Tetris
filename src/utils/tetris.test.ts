@@ -9,7 +9,7 @@ import {
   BOARD_HEIGHT,
   PIECES,
   COLORS,
-} from './tetris';
+} from './tetris.js';
 
 describe('tetris utils', () => {
   describe('calculateScore', () => {

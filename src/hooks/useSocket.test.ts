@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useSocket } from './useSocket';
+import { useSocket } from './useSocket.js';
 import { io } from 'socket.io-client';
 
 // Mock Socket.IO client

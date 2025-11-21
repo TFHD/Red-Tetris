@@ -1,4 +1,4 @@
-import { Player, GameState, Room } from '../types';
+import { Player, GameState, Room } from '../types.js';
 
 /**
  * Crée ou retourne une room existante

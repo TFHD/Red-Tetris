@@ -1,5 +1,5 @@
-import { COLORS } from '../utils/tetris';
-import { CellValue } from '../types';
+import { COLORS } from '../utils/tetris.js';
+import { CellValue } from '../types.js';
 
 function OpponentBoard({ board } : { board : CellValue[][] }) {
   if (!board || !Array.isArray(board)) {

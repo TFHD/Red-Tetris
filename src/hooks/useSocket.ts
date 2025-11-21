@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { SocketHandlers } from '../types';
+import { SocketHandlers } from '../types.js';
 
 //TODO: Y'a pleins de route ici qui servent pas a grand chose mais qu'on pourra utiliser plus tard
 

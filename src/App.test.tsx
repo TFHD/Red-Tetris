@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import App from './App';
-import { useSocket } from './hooks/useSocket';
+import App from './App.js';
+import { useSocket } from './hooks/useSocket.js';
 import { act } from 'react';
 
 const mockEmit = vi.fn((event, data, callback) => {

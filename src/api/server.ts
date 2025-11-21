@@ -14,24 +14,29 @@ const app = express();
 const server = createServer(app);
 
 const isProduction = process.env.NODE_ENV === 'production';
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 if (isProduction) {
   const clientPath = join(__dirname, '..', 'client');
+  console.log('Production mode - serving client from', clientPath);
   app.use(express.static(clientPath));
-  
+
   app.get('/:room/:player', (req, res) => {
     res.sendFile(join(clientPath, 'index.html'));
   });
-  
+
   app.get('/', (req, res) => {
+    res.sendFile(join(clientPath, 'index.html'));
+  });
+
+  app.get('*', (req, res) => {
     res.sendFile(join(clientPath, 'index.html'));
   });
 }
 
 const io = new Server(server, {
   cors: {
-    origin: isProduction ? false : 'http://localhost:3001',
+    origin: isProduction ? '*' : 'http://10.13.6.3:3001',
     methods: ['GET', 'POST'],
   },
 });
@@ -202,5 +207,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+  console.log(`Server listening on http://127.0.0.1:${PORT}`);
 });

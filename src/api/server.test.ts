@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Server } from 'socket.io';
 import { io as ClientIO, Socket as ClientSocket } from 'socket.io-client';
-import { ensureRoom, validateGameState } from './gameLogic';
-import { GameState, Player } from '../types';
+import { ensureRoom, validateGameState } from './gameLogic.js';
+import { GameState, Player } from '../types.js';
 
 describe('Server Socket.IO', () => {
   let io: Server;

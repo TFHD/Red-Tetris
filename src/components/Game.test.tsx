@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import Game from './Game';
-import { Player } from '../types';
+import Game from './Game.js';
+import { Player } from '../types.js';
 import { Socket } from 'socket.io-client';
 
 const mockSocket = {

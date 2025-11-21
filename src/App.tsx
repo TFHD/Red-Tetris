@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useSocket } from './hooks/useSocket';
-import Game from './components/Game';
-import WaitingRoom from './components/WaitingRoom';
-import { JoinResponse, Player } from './types';
+import { useSocket } from './hooks/useSocket.js';
+import Game from './components/Game.js';
+import WaitingRoom from './components/WaitingRoom.js';
+import { JoinResponse, Player } from './types.js';
 
 function App() {
   const [gameState, setGameState] = useState('connecting'); // 'connecting' | 'waiting' | 'playing' | 'error'
@@ -32,7 +32,7 @@ function App() {
 
   const [socketConnected, setSocketConnected] = useState(false);
 
-  const socket = useSocket('http://localhost:3000', {
+  const socket = useSocket('http://10.13.6.3:3000', {
     onConnect: () => {
       console.log('Socket connected!');
       setSocketConnected(true);

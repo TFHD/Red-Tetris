@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import TetrisBoard from './TetrisBoard';
+import TetrisBoard from './TetrisBoard.js';
 import { act } from 'react';
 
 const mockPieceGenerator = vi.fn(() => 'I');

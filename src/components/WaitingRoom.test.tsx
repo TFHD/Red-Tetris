@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import WaitingRoom from './WaitingRoom';
-import { Player } from '../types';
+import WaitingRoom from './WaitingRoom.js';
+import { Player } from '../types.js';
 
 describe('WaitingRoom Component', () => {
   const mockPlayers: Player[] = [

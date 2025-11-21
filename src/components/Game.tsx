@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import TetrisBoard from './TetrisBoard';
-import OpponentBoard from './OpponentBoard';
-import NextPieces from './NextPieces';
-import { createPieceGenerator, calculateScore, calculatePenalty } from '../utils/tetris';
-import { Player, CellValue } from '../types';
+import TetrisBoard from './TetrisBoard.js';
+import OpponentBoard from './OpponentBoard.js';
+import NextPieces from './NextPieces.js';
+import { createPieceGenerator, calculateScore, calculatePenalty } from '../utils/tetris.js';
+import { Player, CellValue } from '../types.js';
 import { Socket } from 'socket.io-client';
-import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import { DefaultEventsMap } from 'socket.io';
 
 //TODO: Rajouter un bouton restart 
 

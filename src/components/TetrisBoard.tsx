@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { PIECES, COLORS, addPenaltyLines, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/tetris';
-import { Piece, Position, CellValue } from '../types';
+import { PIECES, COLORS, addPenaltyLines, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/tetris.js';
+import { Piece, Position, CellValue } from '../types.js';
 
 
 /**
