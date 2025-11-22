@@ -130,6 +130,7 @@ io.on('connection', (socket) => {
     const currentIndex = playersList.indexOf(socket.id);
 
     if (currentIndex === -1) return;
+    if (playersList.length < 2) return;
   
     const nextIndex = (currentIndex + 1) % playersList.length;
     const targetPlayerId = playersList[nextIndex]!;
