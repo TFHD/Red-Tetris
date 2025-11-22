@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host",
-    "dev:server": "tsx src/api/server.ts",
+    "dev:server": "tsx --env-file=.env src/api/server.ts",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "tsc",

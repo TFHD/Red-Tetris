@@ -32,7 +32,9 @@ function App() {
 
   const [socketConnected, setSocketConnected] = useState(false);
 
-  const socket = useSocket('http://10.13.6.3:3000', {
+  const backendUrl = `http://${window.location.hostname}:3000`;
+
+  const socket = useSocket(backendUrl, {
     onConnect: () => {
       console.log('Socket connected!');
       setSocketConnected(true);

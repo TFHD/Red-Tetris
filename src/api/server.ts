@@ -28,15 +28,11 @@ if (isProduction) {
   app.get('/', (req, res) => {
     res.sendFile(join(clientPath, 'index.html'));
   });
-
-  app.get('*', (req, res) => {
-    res.sendFile(join(clientPath, 'index.html'));
-  });
 }
 
 const io = new Server(server, {
   cors: {
-    origin: isProduction ? '*' : 'http://10.13.6.3:3001',
+    origin: isProduction ? '*' : `http://${process.env.ADDRESS}:3001`,
     methods: ['GET', 'POST'],
   },
 });
@@ -207,5 +203,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server listening on http://127.0.0.1:${PORT}`);
+  console.log(`Server listening on http://${process.env.ADDRESS}:${PORT}`);
 });
