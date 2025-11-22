@@ -275,6 +275,9 @@ function TetrisBoard({
       
       if (over || !piece) return;
 
+      if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' '].includes(e.key))
+        e.preventDefault();
+
       let newPos = { ...pos };
       let newPiece = piece;
 
@@ -307,8 +310,6 @@ function TetrisBoard({
         default:
           return;
       }
-
-      e.preventDefault();
 
       if (e.key === ' ') {
         setPosition(newPos);

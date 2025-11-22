@@ -27,8 +27,8 @@ function Game({ socket, roomId, playerName, players, seed } :
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [opponentBoard, setOpponentBoard] = useState<CellValue[][]>([]);
-  const [opponentStats, setOpponentStats] = useState({ score: 0, lines: 0 });
+  const [opponentsBoards, setOpponentsBoards] = useState<Map<string, CellValue[][]>>(new Map());
+  const [opponentsStats, setOpponentsStats] = useState<Map<string, { score: number, lines: number }>>(new Map());
   const currentBoardRef = useRef<CellValue[][]>([]);
   const scoreRef = useRef(0);
   const linesRef = useRef(0);
@@ -47,13 +47,14 @@ function Game({ socket, roomId, playerName, players, seed } :
     if (!socket) return;
 
     socket.on('opponent_state', (data) => {
-      if (data.state?.board) {
-        setOpponentBoard(data.state.board);
+      if (data.state?.board && data.from) {
+        setOpponentsBoards(prev => new Map(prev).set(data.from, data.state.board));
+        
         if (data.state.score !== undefined || data.state.lines !== undefined) {
-          setOpponentStats({
+          setOpponentsStats(prev => new Map(prev).set(data.from, {
             score: data.state.score || 0,
             lines: data.state.lines || 0,
-          });
+          }));
         }
       }
     });
@@ -146,7 +147,7 @@ function Game({ socket, roomId, playerName, players, seed } :
     setNextPieces(pieces);
   }, []);
 
-  const opponent = players.find(p => p.name !== playerName);
+  const opponents = players.filter(p => p.name !== playerName);
 
   return (
     <div className="game">
@@ -189,21 +190,30 @@ function Game({ socket, roomId, playerName, players, seed } :
           )}
         </div>
 
-      {opponent && (
-        <div className="opponent-section">
-          <div className="player-info">
-            <h3>🎯 {opponent.name}</h3>
-            <div className="stats">
-              <p>Score: <strong>{opponentStats.score}</strong></p>
-              <p>Lines: <strong>{opponentStats.lines}</strong></p>
-            </div>
-          </div>
-
-          <div className="opponent-board-container">
-            <OpponentBoard board={opponentBoard} />
-          </div>
+        {opponents.length > 0 && (
+          <div className="opponents-grid">
+            {opponents.map((opponent) => {
+              const opponentBoard = opponentsBoards.get(opponent.id) || [];
+              const opponentStats = opponentsStats.get(opponent.id) || { score: 0, lines: 0 };
+              
+              return (
+                <div key={opponent.id} className="opponent-section">
+                  <div className="player-info">
+                    <h3>🎯 {opponent.name}</h3>
+                    <div className="stats">
+                      <p>Score: <strong>{opponentStats.score}</strong></p>
+                      <p>Lines: <strong>{opponentStats.lines}</strong></p>
+                    </div>
+                  </div>
+      
+                  <div className="opponent-board-container">
+                    <OpponentBoard board={opponentBoard} />
+                  </div>
+                </div>
+              );
+            })}
         </div>
-      )}
+        )}
       </div>
 
       <div className="controls-info">

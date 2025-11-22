@@ -4,6 +4,7 @@ import Game from './components/Game.js';
 import WaitingRoom from './components/WaitingRoom.js';
 import { JoinResponse, Player } from './types.js';
 
+
 function App() {
   const [gameState, setGameState] = useState('connecting'); // 'connecting' | 'waiting' | 'playing' | 'error'
   const [roomId, setRoomId] = useState('');
@@ -25,14 +26,17 @@ function App() {
     } else if (parts.length === 0) {
       setGameState('home');
     } else {
-      setError('URL invalide. Format: http://localhost:3001/<room>/<player_name>');
+      setError(`URL invalide. Format: http://${window.location.hostname}/<room>/<player_name>`);
       setGameState('error');
     }
   }, []);
 
   const [socketConnected, setSocketConnected] = useState(false);
 
-  const backendUrl = `http://${window.location.hostname}:3000`;
+  // Backend configuration
+  const backendHost = import.meta.env.VITE_ADDRESS || 'localhost';
+  const backendPort = import.meta.env.VITE_PORT || '3000';
+  const backendUrl = `http://${backendHost}:${backendPort}`;
 
   const socket = useSocket(backendUrl, {
     onConnect: () => {
@@ -43,26 +47,24 @@ function App() {
       console.log('Socket disconnected!');
       setSocketConnected(false);
     },
-    onRoomUpdate: (data) => {
+    onRoomUpdate: (data : { players: Player[] }) => {
       console.log('Room update:', data);
       setPlayers(data.players);
     },
-    onGameStarted: (data) => {
+    onGameStarted: (data : { seed: number }) => {
       console.log('Game started with seed:', data.seed);
       setSeed(data.seed);
       setGameState('playing');
     },
-    onPlayerJoined: (player) => {
+    onPlayerJoined: (player : string) => {
       console.log('Player joined:', player);
     },
-    onPlayerLeft: (player) => {
+    onPlayerLeft: (player : string) => {
       console.log('Player left:', player);
     },
-    //pour avoir un message dans le serveur mais ca marche pas
     onHostAssigned: (data) => {
     console.log('New host assigned:', data);
 
-    //TEST: j'ai mis une alerte (utilite je sais pas) juste pour etre sur que mon player2 deviennent bien l'host 
     alert(`👑 ${data.name} est maintenant le host de la room!`);
   },
   });
@@ -72,7 +74,7 @@ function App() {
       console.log('Auto-joining room:', roomId, 'as', playerName);
       socket.emit('join', { roomId, name: playerName }, (response : JoinResponse) => {
         if (response && response.ok) {
-          setSeed(response.seed);
+          setSeed(response.seed || 0);
           setGameState('waiting');
           console.log('Successfully joined room:', roomId);
         } else {

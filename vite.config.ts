@@ -15,7 +15,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/socket.io': {
-        target: `http://${process.env.ADDRESS}:3000`,
+        target: `http://localhost:3000`,
         ws: true,
       },
     },

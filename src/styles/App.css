@@ -9,12 +9,15 @@ body {
   background: #1a1a2e;
   min-height: 100vh;
   color: #eee;
+  overflow-x: hidden;
 }
 
 .app {
   min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Header */
@@ -44,7 +47,8 @@ main {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 0.5rem;
+  overflow: hidden;
 }
 
 /* Screens communs */
@@ -220,14 +224,36 @@ main {
 /* Game */
 .game {
   width: 100%;
-  max-width: 1200px;
+  max-width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .game-container {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-bottom: 0.5rem;
+}
+
+.opponents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  min-width: 320px;
+  max-width: 380px;
+}
+
+/* Si un seul opponent, centrer */
+.opponents-grid:has(.opponent-section:only-child) {
+  grid-template-columns: 1fr;
+  max-width: 180px;
 }
 
 .player-section,
@@ -238,31 +264,56 @@ main {
   border: 1px solid #0f3460;
 }
 
+.player-section {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+/* Taille fixe des opponent boards */
+.opponents-grid .opponent-section {
+  width: 100%;
+}
+
 .player-info {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   text-align: center;
 }
 
 .player-info h3 {
   color: #00adb5;
   margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .stats {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .stats p {
   background: #0f3460;
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 4px;
 }
 
 .stats strong {
   color: #00adb5;
+}
+
+/* Stats plus compactes pour les opponents */
+.opponent-section .player-info h3 {
+  font-size: 0.85rem;
+}
+
+.opponent-section .stats {
+  font-size: 0.7rem;
+  gap: 0.3rem;
+}
+
+.opponent-section .stats p {
+  padding: 0.2rem 0.4rem;
 }
 
 /* Tetris Board */
@@ -317,20 +368,22 @@ main {
 
 /* Opponent Board */
 .opponent-board-container {
-  width: 200px;
-  height: 400px;
+  width: 100%;
+  height: 220px;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #000;
   border-radius: 4px;
   border: 2px solid #00adb5;
+  overflow: hidden;
 }
 
 .opponent-grid {
   display: flex;
   flex-direction: column;
-  transform: scale(0.6);
+  transform: scale(0.35);
+  transform-origin: center center;
 }
 
 .opponent-row {
@@ -364,29 +417,32 @@ main {
 /* Controls info */
 .controls-info {
   background: #16213e;
-  padding: 1rem;
+  padding: 0.5rem;
   border-radius: 8px;
-  margin-top: 2rem;
   border: 1px solid #0f3460;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .controls-info h4 {
   color: #00adb5;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
 }
 
 .controls-info ul {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: center;
 }
 
 .controls-info li {
   background: #0f3460;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 4px;
+  font-size: 0.85rem;
 }
 
 kbd {
@@ -426,19 +482,162 @@ kbd {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .game-container {
-    flex-direction: column;
-    align-items: center;
+@media (max-width: 1300px) {
+  .game {
+    padding: 0 0.5rem;
   }
-  
+
+  .game-container {
+    gap: 0.5rem;
+  }
+
+  .opponents-grid {
+    min-width: 280px;
+    max-width: 320px;
+    gap: 0.5rem;
+  }
+
+  .opponent-board-container {
+    height: 180px;
+  }
+
+  .opponent-grid {
+    transform: scale(0.3);
+  }
+
+  .next-pieces-sidebar {
+    max-width: 120px;
+    min-width: 110px;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .opponents-grid {
+    min-width: 260px;
+    max-width: 280px;
+  }
+
+  .opponent-board-container {
+    height: 160px;
+  }
+
+  .opponent-grid {
+    transform: scale(0.26);
+  }
+
+  .grid-cell {
+    width: 25px;
+    height: 25px;
+  }
+
+  .opponent-section {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .game-container {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .next-pieces-sidebar {
+    order: 1;
+  }
+
+  .player-section {
+    order: 2;
+  }
+
+  .opponents-grid {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .opponent-board-container {
+    height: 180px;
+  }
+
+  .opponent-grid {
+    transform: scale(0.28);
+  }
+
+  .grid-cell {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 768px) {
   header {
     flex-direction: column;
     gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+  }
+
+  main {
+    padding: 1rem;
   }
   
   .controls-info ul {
     flex-direction: column;
+  }
+
+  .controls-info {
+    padding: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .grid-cell {
+    width: 25px;
+    height: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game {
+    padding: 0 0.5rem;
+  }
+
+  .game-container {
+    gap: 0.75rem;
+  }
+
+  .opponents-grid {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .opponents-grid .opponent-section {
+    min-width: 140px !important;
+    max-width: 160px !important;
+    width: 100%;
+  }
+
+  .opponent-board-container {
+    max-width: 140px;
+  }
+
+  .opponent-grid {
+    transform: scale(0.45);
+  }
+
+  .grid-cell {
+    width: 20px;
+    height: 20px;
+  }
+
+  .penalty-notification {
+    font-size: 1.5rem;
+    padding: 1.5rem 2rem;
   }
 }
 
@@ -471,14 +670,14 @@ kbd {
 /* Info des pénalités */
 .penalty-info {
   background: #0f3460;
-  padding: 1rem;
+  padding: 0.5rem;
   border-radius: 4px;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .penalty-info p {
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
+  margin: 0.2rem 0;
+  font-size: 0.75rem;
 }
 
 .penalty-info strong {
@@ -488,10 +687,11 @@ kbd {
 /* Next Pieces Sidebar */
 .next-pieces-sidebar {
   background: #16213e;
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 8px;
   border: 1px solid #0f3460;
-  min-width: 150px;
+  min-width: 130px;
+  max-width: 150px;
 }
 
 .next-pieces h3 {

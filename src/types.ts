@@ -47,9 +47,37 @@ export interface SocketHandlers {
     onHostAssigned?: (data: any) => void;
 }
 
+/**
+ * Requests & Responses
+ */
+
 export interface JoinResponse {
     ok: boolean;
     roomId: string;
     reason?: string;
-    seed: number;
+    seed?: number;
+}
+
+export interface JoinRequest {
+    roomId: string;
+    name: string;
+}
+
+export interface InputRequest {
+    roomId: string;
+}
+
+export interface InputResponse {
+    ok: boolean;
+    reason?: string;
+}
+
+export interface SyncStateRequest {
+    roomId: string;
+    state: GameState & { score?: number, lines?: number, gameOver?: boolean };
+}
+
+export interface SyncStateResponse {
+    ok: boolean;
+    reason?: string;
 }

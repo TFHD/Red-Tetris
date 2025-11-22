@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { Room, Player, GameState } from '../types.js';
+import { Room, Player, GameState, JoinRequest, JoinResponse, InputRequest, InputResponse, SyncStateRequest, SyncStateResponse } from '../types.js';
 import { ensureRoom, validateGameState } from './gameLogic.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,7 +14,8 @@ const app = express();
 const server = createServer(app);
 
 const isProduction = process.env.NODE_ENV === 'production';
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.VITE_PORT) || 3000;
+const ADDRESS = process.env.VITE_ADDRESS || 'localhost';
 
 if (isProduction) {
   const clientPath = join(__dirname, '..', 'client');
@@ -32,7 +33,7 @@ if (isProduction) {
 
 const io = new Server(server, {
   cors: {
-    origin: isProduction ? '*' : `http://${process.env.ADDRESS}:3001`,
+    origin: isProduction ? '*' : `http://${ADDRESS}:3001`,
     methods: ['GET', 'POST'],
   },
 });
@@ -42,11 +43,11 @@ const rooms = new Map<string, Room>();
 io.on('connection', (socket) => {
   console.log('connect', socket.id);
 
-  socket.on('join', ({ roomId, name }, ack) => {
+  socket.on('join', ({ roomId, name } : JoinRequest, ack : (response: JoinResponse) => void) => {
     console.log('join', roomId, name);
     try {
       const room = ensureRoom(roomId, rooms);
-      if (room.players.size >= 2) {
+      if (room.players.size >= 4) {
         return ack && ack({ ok: false, roomId, reason: 'room_full' });
       }
       for (const player of room.players.values()) {
@@ -84,18 +85,18 @@ io.on('connection', (socket) => {
       });
     } catch (err) {
       console.error(err);
-      ack && ack({ ok: false, reason: 'server_error' });
+      ack && ack({ ok: false, roomId, reason: 'server_error' });
     }
   });
 
-  socket.on('input', ({ roomId }, ack) => {
+  socket.on('input', ({ roomId } : InputRequest, ack : (response: InputResponse) => void) => {
     const room = rooms.get(roomId);
     if (!room) return ack && ack({ ok: false, reason: 'no_room' });
 
     ack && ack({ ok: true });
   });
 
-  socket.on('sync_state', ({ roomId, state }: { roomId: string, state: GameState & { score?: number, lines?: number, gameOver?: boolean } }, ack) => {
+  socket.on('sync_state', ({ roomId, state }: SyncStateRequest, ack : (response: SyncStateResponse) => void) => {
     const room = rooms.get(roomId);
     if (!room) return ack && ack({ ok: false, reason: 'room_not_found' });
 
@@ -119,21 +120,27 @@ io.on('connection', (socket) => {
     ack && ack({ ok: true });
   });
 
-  //Gestion de la penalite dans le bacck 
-  socket.on('send_penalty', ({ roomId, lines }) => {
+  socket.on('send_penalty', ({ roomId, lines } : { roomId: string, lines: number }) => {
     console.log(`👉 Player ${socket.id} sending ${lines} penalty lines to room ${roomId}`);
     
     const room = rooms.get(roomId);
     if (!room) return;
-    
 
-    socket.to(roomId).emit('receive_penalty', { 
+    const playersList = Array.from(room.players.keys());
+    const currentIndex = playersList.indexOf(socket.id);
+
+    if (currentIndex === -1) return;
+  
+    const nextIndex = (currentIndex + 1) % playersList.length;
+    const targetPlayerId = playersList[nextIndex]!;
+
+    io.to(targetPlayerId).emit('receive_penalty', { 
       from: socket.id, 
       lines: lines 
     });
   });
 
-  socket.on('start_game', ({ roomId }) => {
+  socket.on('start_game', ({ roomId } : { roomId: string }) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
@@ -152,7 +159,7 @@ io.on('connection', (socket) => {
     io.in(roomId).emit('game_started', { seed: room.seed });
   });
 
-  socket.on('end_game', ({ roomId }) => {
+  socket.on('end_game', ({ roomId } : { roomId: string }) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
@@ -203,5 +210,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server listening on http://${process.env.ADDRESS}:${PORT}`);
+  console.log(`Server listening on http://${ADDRESS || 'localhost'}:${PORT}`);
 });
