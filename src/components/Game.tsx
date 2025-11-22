@@ -27,8 +27,10 @@ function Game({ socket, roomId, playerName, players, seed } :
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [victory, setVictory] = useState(false);
   const [opponentsBoards, setOpponentsBoards] = useState<Map<string, CellValue[][]>>(new Map());
   const [opponentsStats, setOpponentsStats] = useState<Map<string, { score: number, lines: number }>>(new Map());
+  const [opponentsGameOver, setOpponentsGameOver] = useState<Map<string, boolean>>(new Map());
   const currentBoardRef = useRef<CellValue[][]>([]);
   const scoreRef = useRef(0);
   const linesRef = useRef(0);
@@ -56,6 +58,10 @@ function Game({ socket, roomId, playerName, players, seed } :
             lines: data.state.lines || 0,
           }));
         }
+    
+        if (data.state.gameOver !== undefined) {
+          setOpponentsGameOver(prev => new Map(prev).set(data.from, data.state.gameOver));
+        }
       }
     });
 
@@ -78,6 +84,21 @@ function Game({ socket, roomId, playerName, players, seed } :
       socket.off('receive_penalty');
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (gameOver || victory) return;
+    
+    const opponentsList = players.filter(p => p.name !== playerName);
+    
+    if (opponentsList.length === 0) return;
+    
+    const allOpponentsGameOver = opponentsList.every(opponent => 
+      opponentsGameOver.get(opponent.id) === true
+    );
+    
+    if (allOpponentsGameOver && opponentsList.length > 0) setVictory(true);
+
+  }, [opponentsGameOver, players, playerName, gameOver, victory]);
 
   useEffect(() => {
     if (!socket || gameOver) return;
@@ -125,7 +146,6 @@ function Game({ socket, roomId, playerName, players, seed } :
       console.log(`⚡ Sending ${penaltyLines} penalty lines to opponent`);
     }
   }, [socket, roomId]);
-  
 
   const handleGameOver = useCallback(() => {
     setGameOver(true);
@@ -182,10 +202,19 @@ function Game({ socket, roomId, playerName, players, seed } :
             onNextPiecesUpdate={handleNextPiecesUpdate}
           />
 
-          {gameOver && (
+          {gameOver && !victory && (
             <div className="game-over-overlay">
               <h2>Game Over!</h2>
               <p>Score final: {score}</p>
+            </div>
+          )}
+
+          {victory && (
+            <div className="victory-overlay">
+              <h2>🎉 Victoire ! 🎉</h2>
+              <p>Vous êtes le dernier survivant !</p>
+              <p>Score final: {score}</p>
+              <p>Lignes: {lines}</p>
             </div>
           )}
         </div>

@@ -62,7 +62,6 @@ export function useSocket(url: string, handlers: SocketHandlers) {
     socketInstance.on('game_over', (data) => {
       handlers.onGameOver?.(data);
     });
-    //pour avoir un message dans le serveur mais ca marche pas
     socketInstance.on('host_assigned', (data) => {
       handlers.onHostAssigned?.(data);
     });

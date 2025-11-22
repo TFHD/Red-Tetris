@@ -44,6 +44,7 @@ export interface SocketHandlers {
     onOpponentState?: (data: any) => void;
     onReceivePenalty?: (data: any) => void;
     onGameOver?: (data: any) => void;
+    onGameEnded?: (data: any) => void;
     onHostAssigned?: (data: any) => void;
 }
 

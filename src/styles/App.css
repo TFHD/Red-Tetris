@@ -512,6 +512,45 @@ kbd {
   }
 }
 
+.victory-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #00adb5 0%, #00d4ff 100%);
+  padding: 2rem;
+  border-radius: 8px;
+  border: 3px solid #00ff88;
+  text-align: center;
+  z-index: 10;
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+  animation: victoryPulse 1s ease-in-out infinite;
+}
+
+.victory-overlay h2 {
+  color: #fff;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.victory-overlay p {
+  color: #fff;
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+@keyframes victoryPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+    box-shadow: 0 0 50px rgba(0, 255, 136, 0.8);
+  }
+}
+
 @media (max-width: 1100px) {
   .opponents-grid {
     min-width: 260px;

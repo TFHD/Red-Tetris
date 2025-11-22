@@ -47,14 +47,12 @@ io.on('connection', (socket) => {
     console.log('join', roomId, name);
     try {
       const room = ensureRoom(roomId, rooms);
-      if (room.players.size >= 4) {
-        return ack && ack({ ok: false, roomId, reason: 'room_full' });
-      }
-      for (const player of room.players.values()) {
-        if (player.name === name) {
+      if (room.players.size >= 4) return ack && ack({ ok: false, roomId, reason: 'room_full' });
+      if (name.length > 16) return ack && ack({ ok: false, roomId, reason: 'name_too_long' });
+
+      for (const player of room.players.values())
+        if (player.name === name)
           return ack && ack({ ok: false, roomId, reason: 'name_already_taken' });
-        }
-      }
 
       const isFirst = room.players.size === 0;
 
@@ -135,7 +133,7 @@ io.on('connection', (socket) => {
     const nextIndex = (currentIndex + 1) % playersList.length;
     const targetPlayerId = playersList[nextIndex]!;
 
-    io.to(targetPlayerId).emit('receive_penalty', { 
+    io.to(targetPlayerId).emit('receive_penalty', {
       from: socket.id, 
       lines: lines 
     });
@@ -166,13 +164,14 @@ io.on('connection', (socket) => {
 
     const gameOverPlayers = Array.from(room.players.values()).map((p: Player) => p.gameOver)
 
-    if (gameOverPlayers.length == room.players.size) {
+    if (
+      gameOverPlayers.length == room.players.size - 1 && room.players.size > 1 ||
+      gameOverPlayers.length == room.players.size
+    ) {
       room.started = false;
-      io.in(roomId).emit('game_ended');
     }
 
     return;
-
   });
 
   socket.on('disconnect', () => {
