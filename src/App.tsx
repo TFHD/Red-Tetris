@@ -14,6 +14,7 @@ function App() {
   const [seed, setSeed] = useState<number>(0);
   const [error, setError] = useState('');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [gameKey, setGameKey] = useState<number>(0);
 
   // Parser l'URL : /:room/:playerName
   useEffect(() => {
@@ -71,11 +72,6 @@ function App() {
     onPlayerLeft: (player : string) => {
       console.log('Player left:', player);
     },
-    onHostAssigned: (data) => {
-    console.log('New host assigned:', data);
-
-    alert(`👑 ${data.name} est maintenant le host de la room!`);
-  },
   });
 
   useEffect(() => {
@@ -93,6 +89,23 @@ function App() {
       });
     }
   }, [socket, socketConnected, roomId, playerName, gameState]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleGameRestarted = (data: { seed: number }) => {
+      console.log('Game restarted with new seed:', data.seed);
+      setSeed(data.seed);
+      setGameKey(prev => prev + 1);
+      setGameState('playing');
+    };
+
+    socket.on('game_restarted', handleGameRestarted);
+
+    return () => {
+      socket.off('game_restarted', handleGameRestarted);
+    };
+  }, [socket]);
 
   const handleStartGame = () => {
     if (socket) {
@@ -219,6 +232,7 @@ function App() {
           />
         ) : (
           <Game
+            key={gameKey}
             socket={socket!}
             roomId={roomId}
             playerName={playerName}

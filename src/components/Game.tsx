@@ -7,8 +7,6 @@ import { Player, CellValue } from '../types.js';
 import { Socket } from 'socket.io-client';
 import { DefaultEventsMap } from 'socket.io';
 
-//TODO: Rajouter un bouton restart 
-
 /**
  * @description Composant Game
  * @param {Socket} socket - Instance du socket
@@ -38,6 +36,9 @@ function Game({ socket, roomId, playerName, players, seed } :
   const [nextPieces, setNextPieces] = useState<string[]>([]);
 
   const [pieceGenerator] = useState(() => createPieceGenerator(seed));
+
+  // Déterminer si le joueur actuel est l'hôte
+  const isHost = players.find(p => p.name === playerName)?.role === 'host';
 
   scoreRef.current = score;
   linesRef.current = lines;
@@ -69,11 +70,52 @@ function Game({ socket, roomId, playerName, players, seed } :
       setTimeout(() => setPendingPenalty(0), 100);
     });
 
+    socket.on('player_left', (data: { id: string }) => {
+      console.log(`Player ${data.id} left the game`);
+      
+      setOpponentsBoards(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(data.id);
+        return newMap;
+      });
+      
+      setOpponentsStats(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(data.id);
+        return newMap;
+      });
+    });
+
     return () => {
       socket.off('opponent_state');
       socket.off('receive_penalty');
+      socket.off('player_left');
     };
   }, [socket]);
+
+  useEffect(() => {
+    const currentPlayerIds = new Set(players.map(p => p.id));
+    
+    setOpponentsBoards(prev => {
+      const newMap = new Map(prev);
+      for (const playerId of prev.keys()) {
+        if (!currentPlayerIds.has(playerId)) {
+          newMap.delete(playerId);
+        }
+      }
+      return newMap;
+    });
+    
+    setOpponentsStats(prev => {
+      const newMap = new Map(prev);
+      for (const playerId of prev.keys()) {
+        if (!currentPlayerIds.has(playerId)) {
+          newMap.delete(playerId);
+        }
+      }
+      return newMap;
+    });
+  }, [players]);
 
  useEffect(() => {
     if (!socket) return;
@@ -163,6 +205,12 @@ function Game({ socket, roomId, playerName, players, seed } :
     setNextPieces(pieces);
   }, []);
 
+  const handleRestart = useCallback(() => {
+    if (!socket || !isHost) return;
+    
+    socket.emit('restart_game', { roomId });
+  }, [socket, roomId, isHost]);
+
   const opponents = players.filter(p => p.name !== playerName);
 
   return (
@@ -175,6 +223,15 @@ function Game({ socket, roomId, playerName, players, seed } :
       <div className="game-container">
         <div className="next-pieces-sidebar">
           <NextPieces nextPieces={nextPieces} />
+          {isHost && (gameOver || victory) && (
+            <button 
+              className="btn-restart"
+              onClick={handleRestart}
+              title="Redémarrer la partie"
+            >
+              🔄 Restart
+            </button>
+          )}
         </div>
 
         <div className="player-section">

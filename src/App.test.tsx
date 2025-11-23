@@ -100,7 +100,6 @@ describe('App Component', () => {
         onGameStarted: expect.any(Function),
         onPlayerJoined: expect.any(Function),
         onPlayerLeft: expect.any(Function),
-        onHostAssigned: expect.any(Function),
       })
     );
   });
@@ -176,22 +175,6 @@ describe('App Component', () => {
     socketHandlers.onDisconnect();
     
     expect(socketHandlers.onDisconnect).toBeDefined();
-  });
-
-  it('devrait gérer onHostAssigned avec alert', () => {
-    mockLocation.pathname = '/room1/player1';
-    
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    
-    render(<App />);
-    
-    const socketHandlers = (useSocket as any).mock.calls[0][1];
-    
-    socketHandlers.onHostAssigned({ id: '1', name: 'Player1' });
-    
-    expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('Player1'));
-    
-    alertMock.mockRestore();
   });
 
   it('devrait appeler handleStartGame', () => {

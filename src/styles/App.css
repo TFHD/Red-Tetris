@@ -854,6 +854,34 @@ kbd {
   background: transparent;
 }
 
+/* Bouton Restart */
+.btn-restart {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #00adb5 0%, #00d4ff 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 173, 181, 0.3);
+  text-align: center;
+}
+
+.btn-restart:hover {
+  background: linear-gradient(135deg, #00d4ff 0%, #00adb5 100%);
+  box-shadow: 0 6px 16px rgba(0, 173, 181, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-restart:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 173, 181, 0.4);
+}
+
 @media (min-width: 769px) {
   .game-container {
     align-items: flex-start;

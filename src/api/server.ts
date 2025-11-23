@@ -49,6 +49,7 @@ io.on('connection', (socket) => {
     try {
       const room = ensureRoom(roomId, rooms);
       if (room.players.size >= 4) return ack && ack({ ok: false, roomId, reason: 'room_full' });
+      if (room.started) return ack && ack({ ok: false, roomId, reason: 'room_started' });
       if (name.length > 16) return ack && ack({ ok: false, roomId, reason: 'name_too_long' });
 
       for (const player of room.players.values())
@@ -187,6 +188,31 @@ io.on('connection', (socket) => {
     }
 
     return;
+  });
+
+  socket.on('restart_game', ({ roomId } : { roomId: string }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const player = room.players.get(socket.id);
+    if (!player || player.role !== 'host') {
+      console.warn(`Player ${socket.id} tried to restart game but is not host`);
+      return;
+    }
+
+    for (const [playerId, player] of room.players.entries()) {
+      player.score = 0;
+      player.lines = 0;
+      player.gameOver = false;
+      player.lastState = null;
+    }
+
+    room.seed = Date.now();
+    room.started = true;
+
+    io.in(roomId).emit('game_restarted', { seed: room.seed });
+    
+    console.log(`Game restarted in room ${roomId} by host ${socket.id}`);
   });
 
   socket.on('save_score', async ({ roomId, name, score, lines }: SaveScoreRequest, ack?: (response: { ok: boolean }) => void) => {

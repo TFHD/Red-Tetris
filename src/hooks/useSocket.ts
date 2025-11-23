@@ -62,8 +62,8 @@ export function useSocket(url: string, handlers: SocketHandlers) {
     socketInstance.on('game_over', (data) => {
       handlers.onGameOver?.(data);
     });
-    socketInstance.on('host_assigned', (data) => {
-      handlers.onHostAssigned?.(data);
+    socketInstance.on('game_restarted', (data) => {
+      handlers.onGameRestarted?.(data);
     });
 
     setSocket(socketInstance);

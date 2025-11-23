@@ -96,7 +96,6 @@ describe('useSocket', () => {
       onOpponentState: vi.fn(),
       onReceivePenalty: vi.fn(),
       onGameOver: vi.fn(),
-      onHostAssigned: vi.fn(),
     };
 
     renderHook(() => useSocket(mockUrl, handlers));
@@ -111,7 +110,6 @@ describe('useSocket', () => {
     expect(mockSocket.on).toHaveBeenCalledWith('opponent_state', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('receive_penalty', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('game_over', expect.any(Function));
-    expect(mockSocket.on).toHaveBeenCalledWith('host_assigned', expect.any(Function));
   });
 
   it('devrait appeler onConnect quand le socket se connecte', () => {
@@ -232,17 +230,5 @@ describe('useSocket', () => {
     gameOverCallback(data);
 
     expect(onGameOver).toHaveBeenCalledWith(data);
-  });
-
-  it('devrait appeler onHostAssigned avec des données', () => {
-    const onHostAssigned = vi.fn();
-    renderHook(() => useSocket(mockUrl, { onHostAssigned }));
-
-    const hostAssignedCall = (mockSocket.on as any).mock.calls.find((call: any[]) => call[0] === 'host_assigned');
-    const hostAssignedCallback = hostAssignedCall[1];
-    const data = { id: '1', name: 'Player1' };
-    hostAssignedCallback(data);
-
-    expect(onHostAssigned).toHaveBeenCalledWith(data);
   });
 });
