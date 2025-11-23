@@ -29,15 +29,12 @@ function Game({ socket, roomId, playerName, players, seed } :
   const [gameOver, setGameOver] = useState(false);
   const [victory, setVictory] = useState(false);
   const [opponentsBoards, setOpponentsBoards] = useState<Map<string, CellValue[][]>>(new Map());
-  const [opponentsStats, setOpponentsStats] = useState<Map<string, { score: number, lines: number }>>(new Map());
-  const [opponentsGameOver, setOpponentsGameOver] = useState<Map<string, boolean>>(new Map());
+  const [opponentsStats, setOpponentsStats] = useState<Map<string, { score: number, lines: number, gameOver: boolean }>>(new Map());
   const currentBoardRef = useRef<CellValue[][]>([]);
   const scoreRef = useRef(0);
   const linesRef = useRef(0);
-  //Gestion penalites
   const [pendingPenalty, setPendingPenalty] = useState<number>(0);
   const [penaltyNotification, setPenaltyNotification] = useState<string | null>(null);
-  // Prochaines pièces
   const [nextPieces, setNextPieces] = useState<string[]>([]);
 
   const [pieceGenerator] = useState(() => createPieceGenerator(seed));
@@ -51,16 +48,12 @@ function Game({ socket, roomId, playerName, players, seed } :
     socket.on('opponent_state', (data) => {
       if (data.state?.board && data.from) {
         setOpponentsBoards(prev => new Map(prev).set(data.from, data.state.board));
-        
-        if (data.state.score !== undefined || data.state.lines !== undefined) {
+        if (data.state.score !== undefined || data.state.lines !== undefined || data.state.gameOver !== undefined) {
           setOpponentsStats(prev => new Map(prev).set(data.from, {
-            score: data.state.score || 0,
-            lines: data.state.lines || 0,
+            score: data.state.score !== undefined ? data.state.score : (prev.get(data.from)?.score || 0),
+            lines: data.state.lines !== undefined ? data.state.lines : (prev.get(data.from)?.lines || 0),
+            gameOver: data.state.gameOver === true ? true : (prev.get(data.from)?.gameOver || false),
           }));
-        }
-    
-        if (data.state.gameOver !== undefined) {
-          setOpponentsGameOver(prev => new Map(prev).set(data.from, data.state.gameOver));
         }
       }
     });
@@ -68,14 +61,11 @@ function Game({ socket, roomId, playerName, players, seed } :
     socket.on('receive_penalty', (data) => {
       console.log(`⚡ Received ${data.lines} penalty lines from opponent!`);
       
-      // compteur de pénalités
       setPendingPenalty(prev => prev + data.lines);
       
-      //notification
       setPenaltyNotification(`+${data.lines} ligne${data.lines > 1 ? 's' : ''} 💀`);
       setTimeout(() => setPenaltyNotification(null), 2000);
       
-      //Ca pour eviter des problemes
       setTimeout(() => setPendingPenalty(0), 100);
     });
 
@@ -85,20 +75,17 @@ function Game({ socket, roomId, playerName, players, seed } :
     };
   }, [socket]);
 
-  useEffect(() => {
-    if (gameOver || victory) return;
-    
-    const opponentsList = players.filter(p => p.name !== playerName);
-    
-    if (opponentsList.length === 0) return;
-    
-    const allOpponentsGameOver = opponentsList.every(opponent => 
-      opponentsGameOver.get(opponent.id) === true
-    );
-    
-    if (allOpponentsGameOver && opponentsList.length > 0) setVictory(true);
+ useEffect(() => {
+    if (!socket) return;
 
-  }, [opponentsGameOver, players, playerName, gameOver, victory]);
+    const opponents = Array.from(opponentsStats.values());
+    const allOpponentsGameOver = opponents.filter(opponent => opponent.gameOver);
+
+    console.log('Vérification victoire :', { allOpponentsGameOver, opponents, gameOver });
+
+    if (gameOver === false && allOpponentsGameOver.length == opponentsStats.size && opponents.length > 0)
+      setVictory(true);
+  }, [opponentsStats, gameOver, socket]);
 
   useEffect(() => {
     if (!socket || gameOver) return;
@@ -155,7 +142,7 @@ function Game({ socket, roomId, playerName, players, seed } :
         board: currentBoardRef.current,
         score: scoreRef.current,
         lines: linesRef.current,
-        gameOver: gameOver,
+        gameOver: true,
       }
     });
     socket.emit('end_game', { roomId });
@@ -196,7 +183,7 @@ function Game({ socket, roomId, playerName, players, seed } :
             onStateUpdate={handleStateUpdate}
             onLinesCleared={handleLinesCleared}
             pendingPenalty={pendingPenalty}
-            gameOver={gameOver}
+            gamefinished={gameOver || victory}
             onGameOver={handleGameOver}
             speed={speed}
             onNextPiecesUpdate={handleNextPiecesUpdate}
@@ -204,8 +191,10 @@ function Game({ socket, roomId, playerName, players, seed } :
 
           {gameOver && !victory && (
             <div className="game-over-overlay">
-              <h2>Game Over!</h2>
-              <p>Score final: {score}</p>
+              <div className="game-over-card">
+                <h2>Game Over!</h2>
+                <p>Score final: {score}</p>
+              </div>
             </div>
           )}
 

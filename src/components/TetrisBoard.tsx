@@ -19,7 +19,7 @@ interface TetrisBoardProps {
   onStateUpdate: (board: CellValue[][]) => void;
   onLinesCleared: (count: number) => void;
   pendingPenalty: number;
-  gameOver: boolean;
+  gamefinished: boolean;
   onGameOver: () => void;
   speed: number;
   onNextPiecesUpdate?: (pieces: string[]) => void;
@@ -31,7 +31,7 @@ function TetrisBoard({
   onStateUpdate,
   onLinesCleared,
   pendingPenalty,
-  gameOver,
+  gamefinished,
   onGameOver,
   speed,
   onNextPiecesUpdate,
@@ -45,17 +45,17 @@ function TetrisBoard({
   const [nextPieces, setNextPieces] = useState<string[]>([]);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const stateRef = useRef({ currentPiece, position, board, gameOver, isPaused });
+  const stateRef = useRef({ currentPiece, position, board, gamefinished, isPaused });
 
-  stateRef.current = { currentPiece, position, board, gameOver, isPaused, };
+  stateRef.current = { currentPiece, position, board, gamefinished, isPaused, };
 
   //Generqtion des pieces 
   useEffect(() => {
-    if (pendingPenalty > 0 && !gameOver) {
+    if (pendingPenalty > 0 && !gamefinished) {
       console.log(`⚡ Receiving ${pendingPenalty} penalty lines!`);
       setBoard(prevBoard => addPenaltyLines(prevBoard, pendingPenalty));
     }
-  }, [pendingPenalty, gameOver]);
+  }, [pendingPenalty, gamefinished]);
 
   /**
    * Génère une nouvelle pièce 
@@ -106,19 +106,19 @@ function TetrisBoard({
    * Initialise les prochaines pièces au démarrage
    */
   useEffect(() => {
-    if (nextPieces.length === 0 && !gameOver) {
+    if (nextPieces.length === 0 && !gamefinished) {
       initNextPieces();
     }
-  }, [nextPieces.length, initNextPieces, gameOver]);
+  }, [nextPieces.length, initNextPieces, gamefinished]);
 
   /**
    * Initialise la première pièce
    */
   useEffect(() => {
-    if (!currentPiece && !gameOver && nextPieces.length > 0) {
+    if (!currentPiece && !gamefinished && nextPieces.length > 0) {
       setCurrentPiece(getNextPiece());
     }
-  }, [currentPiece, gameOver, nextPieces.length]);
+  }, [currentPiece, gamefinished, nextPieces.length]);
 
 
   /**
@@ -227,7 +227,7 @@ function TetrisBoard({
         currentPiece: piece,
         position: pos,
         board: brd,
-        gameOver: over,
+        gamefinished: over,
         isPaused: paused
       } = stateRef.current;
       
@@ -258,12 +258,12 @@ function TetrisBoard({
    * Redémarre le timer quand la vitesse change
    */
   useEffect(() => {
-    if (!gameOver) {
+    if (!gamefinished) {
       startTimer();
     }
     
     return () => stopTimer();
-  }, [startTimer, gameOver]);
+  }, [startTimer, gamefinished]);
 
 
   /**
@@ -271,7 +271,7 @@ function TetrisBoard({
    */
   useEffect(() => {
     const handleKeyDown = async (e : KeyboardEvent) => {
-      const { currentPiece: piece, position: pos, board: brd, gameOver: over } = stateRef.current;
+      const { currentPiece: piece, position: pos, board: brd, gamefinished: over } = stateRef.current;
       
       if (over || !piece) return;
 
@@ -399,11 +399,6 @@ function TetrisBoard({
           </div>
         ))}
       </div>
-      {gameOver && (
-        <div className="board-overlay">
-          <h3>Game Over</h3>
-        </div>
-      )}
     </div>
   );
 }

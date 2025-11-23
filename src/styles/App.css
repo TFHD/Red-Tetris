@@ -454,21 +454,104 @@ kbd {
 }
 
 .game-over-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  padding: 1rem;
+}
+.game-over-overlay {
+  /* Centered inside the parent (player-section) like victory-overlay */
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #16213e;
-  padding: 2rem;
-  border-radius: 8px;
-  border: 2px solid #00adb5;
-  text-align: center;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* let inner card handle interactions if any */
 }
 
-.game-over-overlay h2 {
-  color: #ff6b6b;
-  margin-bottom: 1rem;
+.game-over-overlay .game-over-card {
+  background: linear-gradient(180deg, #1b1b2f 0%, #16213e 100%);
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(0, 173, 181, 0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 6px 18px rgba(0, 173, 181, 0.08);
+  text-align: center;
+  min-width: 280px;
+  max-width: 520px;
+  width: 90%;
+  transform: translateY(-6px);
+  animation: appearUp 240ms ease-out;
+}
+.game-over-overlay .game-over-card {
+  pointer-events: auto;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 220px;
+  max-width: 420px;
+  width: 88%;
+}
+
+.game-over-overlay .game-over-card h2 {
+  color: #000;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  letter-spacing: 0.5px;
+}
+.game-over-overlay .game-over-card p {
+  color: #111;
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1rem;
+}
+
+.game-over-overlay .game-over-card .btn {
+  display: inline-block;
+  width: auto;
+  padding: 0.6rem 1.25rem;
+  margin-top: 0.75rem;
+  border-radius: 8px;
+}
+
+.game-over-overlay .game-over-card {
+  background: linear-gradient(135deg, #ff7b7b 0%, #ff4040 100%);
+  border: 3px solid #ff1f1f;
+  box-shadow: 0 20px 50px rgba(255, 64, 64, 0.25), 0 6px 18px rgba(0, 0, 0, 0.6);
+  animation: gameOverPulse 1s ease-in-out infinite;
+}
+.game-over-overlay .game-over-card {
+  background: linear-gradient(135deg, #ff7b7b 0%, #ff4040 100%);
+  border: 3px solid #ff1f1f;
+  box-shadow: 0 12px 28px rgba(255, 64, 64, 0.22), 0 6px 18px rgba(0, 0, 0, 0.6);
+  animation: gameOverPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes gameOverPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 30px rgba(255, 31, 31, 0.35);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.03);
+    box-shadow: 0 0 60px rgba(255, 31, 31, 0.5);
+  }
+}
+
+@keyframes appearUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-6px) scale(1);
+  }
 }
 
 /* Utilities */

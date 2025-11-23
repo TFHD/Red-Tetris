@@ -129,8 +129,21 @@ io.on('connection', (socket) => {
 
     if (currentIndex === -1) return;
     if (playersList.length < 2) return;
-  
-    const nextIndex = (currentIndex + 1) % playersList.length;
+
+    const nextIndexNotGameOver = (() => {
+      let nextIndex = (currentIndex + 1) % playersList.length;
+      let safetyCounter = 0;
+      while (room.players.get(playersList[nextIndex]!)?.gameOver) {
+        nextIndex = (nextIndex + 1) % playersList.length;
+        safetyCounter++;
+        if (safetyCounter > playersList.length) return -1;
+      }
+      return nextIndex;
+    });
+
+    const nextIndex = nextIndexNotGameOver();
+    if (nextIndex === -1) return;
+
     const targetPlayerId = playersList[nextIndex]!;
 
     io.to(targetPlayerId).emit('receive_penalty', {

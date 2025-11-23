@@ -4,6 +4,9 @@ import App from './App.js';
 import { useSocket } from './hooks/useSocket.js';
 import { act } from 'react';
 
+const ADDRESS = import.meta.env.VITE_ADDRESS || 'localhost';
+const PORT = import.meta.env.VITE_PORT || '3000';
+
 const mockEmit = vi.fn((event, data, callback) => {
   if (event === 'join' && callback) {
     callback({ ok: true, roomId: data.roomId, seed: 12345 });
@@ -89,7 +92,7 @@ describe('App Component', () => {
     render(<App />);
     
     expect(useSocket).toHaveBeenCalledWith(
-      'http://localhost:3000',
+      `http://${ADDRESS}:${PORT}`,
       expect.objectContaining({
         onConnect: expect.any(Function),
         onDisconnect: expect.any(Function),
