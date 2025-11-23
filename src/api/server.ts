@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { Room, Player, GameState, JoinRequest, JoinResponse, InputRequest, InputResponse, SyncStateRequest, SyncStateResponse } from '../types.js';
+import { Room, Player, JoinRequest, JoinResponse, InputRequest, InputResponse, SyncStateRequest, SyncStateResponse } from '../types.js';
 import { ensureRoom, validateGameState } from './gameLogic.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -182,6 +182,7 @@ io.on('connection', (socket) => {
       gameOverPlayers.length == room.players.size
     ) {
       room.started = false;
+      room.seed = Date.now();
     }
 
     return;

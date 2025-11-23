@@ -41,13 +41,12 @@ function TetrisBoard({
   );
   const [currentPiece, setCurrentPiece] = useState<Piece | null>(null);
   const [position, setPosition] = useState<Position>({ x: 3, y: 0 });
-  const [isPaused, setIsPaused] = useState(false);
   const [nextPieces, setNextPieces] = useState<string[]>([]);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const stateRef = useRef({ currentPiece, position, board, gamefinished, isPaused });
+  const stateRef = useRef({ currentPiece, position, board, gamefinished });
 
-  stateRef.current = { currentPiece, position, board, gamefinished, isPaused, };
+  stateRef.current = { currentPiece, position, board, gamefinished, };
 
   //Generqtion des pieces 
   useEffect(() => {
@@ -218,9 +217,7 @@ function TetrisBoard({
    * Démarre le timer avec la vitesse actuelle
    */
   const startTimer = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
     intervalRef.current = setInterval(() => {
       const { 
@@ -228,10 +225,9 @@ function TetrisBoard({
         position: pos,
         board: brd,
         gamefinished: over,
-        isPaused: paused
       } = stateRef.current;
       
-      if (over || paused || !piece ) return;
+      if (over || !piece ) return;
 
       const newPos = { ...pos, y: pos.y + 1 };
       
@@ -360,6 +356,23 @@ function TetrisBoard({
             const boardX = position.x + x;
             if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
               visual[boardY]![boardX] = currentPiece.type as CellValue;
+            }
+          }
+        }
+      }
+      let ghostY = position.y;
+      while (!checkCollision(currentPiece, { x: position.x, y: ghostY + 1 }, board)) {
+        ghostY++;
+      }
+      for (let y = 0; y < currentPiece.shape.length; y++) {
+        for (let x = 0; x < currentPiece.shape[y]!.length; x++) {
+          if (currentPiece.shape[y]![x]) {
+            const gY = ghostY + y;
+            const gX = position.x + x;
+            if (gY >= 0 && gY < BOARD_HEIGHT && gX >= 0 && gX < BOARD_WIDTH) {
+              if (!visual[gY]![gX]) { // n'écrase pas les cellules déjà présentes
+                visual[gY]![gX] = 'G' as CellValue;
+              }
             }
           }
         }

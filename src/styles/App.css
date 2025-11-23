@@ -532,6 +532,12 @@ kbd {
   animation: gameOverPulse 1.2s ease-in-out infinite;
 }
 
+.grid-cell.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.95);
+}
+
 @keyframes gameOverPulse {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
