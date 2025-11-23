@@ -85,7 +85,6 @@ describe('Server Socket.IO', () => {
         expect(data).toHaveProperty('roomId');
         expect(data).toHaveProperty('state');
         
-        // Simuler la validation côté serveur
         if (ack) ack({ ok: true });
         resolve();
       });
@@ -104,7 +103,6 @@ describe('Server Socket.IO', () => {
   it('devrait valider sync_state avec callback', async () => {
     const syncPromise = new Promise<void>((resolve) => {
       serverSocket.on('sync_state', (data: any, ack: Function) => {
-        // Tester simplement que le callback fonctionne
         if (ack) ack({ ok: true });
         resolve();
       });

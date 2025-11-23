@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { SocketHandlers } from '../types.js';
 
-//TODO: Y'a pleins de route ici qui servent pas a grand chose mais qu'on pourra utiliser plus tard
-
-
-
 /**
  * Hook pour gérer Socket.IO dans React
  * @param {string} url - URL du serveur Socket.IO

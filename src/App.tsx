@@ -16,7 +16,6 @@ function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [gameKey, setGameKey] = useState<number>(0);
 
-  // Parser l'URL : /:room/:playerName
   useEffect(() => {
     const path = window.location.pathname;
     const parts = path.split('/').filter(p => p);
@@ -24,7 +23,6 @@ function App() {
     if (parts.length >= 2) {
       const [room, name] = parts;
       
-      // Route spéciale pour le leaderboard
       if (room === 'leaderboard') {
         setGameState('leaderboard');
         return;
@@ -43,7 +41,6 @@ function App() {
 
   const [socketConnected, setSocketConnected] = useState(false);
 
-  // Backend configuration
   const backendHost = import.meta.env.VITE_ADDRESS || 'localhost';
   const backendPort = import.meta.env.VITE_PORT || '3000';
   const backendUrl = `http://${backendHost}:${backendPort}`;

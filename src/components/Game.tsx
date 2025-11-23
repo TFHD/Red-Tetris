@@ -37,7 +37,6 @@ function Game({ socket, roomId, playerName, players, seed } :
 
   const [pieceGenerator] = useState(() => createPieceGenerator(seed));
 
-  // Déterminer si le joueur actuel est l'hôte
   const isHost = players.find(p => p.name === playerName)?.role === 'host';
 
   scoreRef.current = score;
