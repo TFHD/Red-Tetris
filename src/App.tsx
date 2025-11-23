@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { useSocket } from './hooks/useSocket.js';
 import Game from './components/Game.js';
 import WaitingRoom from './components/WaitingRoom.js';
+import Leaderboard from './components/Leaderboard.js';
 import { JoinResponse, Player } from './types.js';
 
 
 function App() {
-  const [gameState, setGameState] = useState('connecting'); // 'connecting' | 'waiting' | 'playing' | 'error'
+  const [gameState, setGameState] = useState('connecting'); // 'connecting' | 'waiting' | 'playing' | 'error' | 'leaderboard'
   const [roomId, setRoomId] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [players, setPlayers] = useState<Player[]>([]);
   const [seed, setSeed] = useState<number>(0);
   const [error, setError] = useState('');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   // Parser l'URL : /:room/:playerName
   useEffect(() => {
@@ -20,6 +22,13 @@ function App() {
     
     if (parts.length >= 2) {
       const [room, name] = parts;
+      
+      // Route spéciale pour le leaderboard
+      if (room === 'leaderboard') {
+        setGameState('leaderboard');
+        return;
+      }
+      
       setRoomId(decodeURIComponent(room || ''));
       setPlayerName(decodeURIComponent(name || ''));
       setGameState('connecting');
@@ -43,7 +52,7 @@ function App() {
       console.log('Socket connected!');
       setSocketConnected(true);
     },
-    onDisconnect: () => {
+    onDisconnect: (reason : string) => {
       console.log('Socket disconnected!');
       setSocketConnected(false);
     },
@@ -119,6 +128,36 @@ function App() {
               <p>💡 <strong>Astuce :</strong> Partagez l'URL avec un ami pour jouer ensemble !</p>
               <p>Assurez-vous d'utiliser le <strong>même nom de room</strong> mais des <strong>pseudos différents</strong>.</p>
             </div>
+            <div className="leaderboard-button-container">
+              <button 
+                className="leaderboard-button"
+                onClick={() => setShowLeaderboard(!showLeaderboard)}
+              >
+                {showLeaderboard ? '🎮 Masquer le Leaderboard' : '🏆 Voir le Leaderboard'}
+              </button>
+            </div>
+            {showLeaderboard && <Leaderboard socket={socket} />}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (gameState === 'leaderboard') {
+    return (
+      <div className="app">
+        <header>
+          <h1>🎮 Red Tetris</h1>
+        </header>
+        <main>
+          <div className="home-screen">
+            <button 
+              className="back-button"
+              onClick={() => window.location.href = '/'}
+            >
+              ← Retour à l'accueil
+            </button>
+            <Leaderboard socket={socket} />
           </div>
         </main>
       </div>

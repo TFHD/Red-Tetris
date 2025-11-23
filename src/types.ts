@@ -82,3 +82,22 @@ export interface SyncStateResponse {
     ok: boolean;
     reason?: string;
 }
+
+export interface ScoreEntry {
+    name: string;
+    score: number;
+    lines: number;
+    date: string;
+    roomId: string;
+}
+
+export interface SaveScoreRequest {
+    roomId: string;
+    name: string;
+    score: number;
+    lines: number;
+}
+
+export interface LeaderboardResponse {
+    scores: ScoreEntry[];
+}

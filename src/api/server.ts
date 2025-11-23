@@ -4,8 +4,9 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { Room, Player, JoinRequest, JoinResponse, InputRequest, InputResponse, SyncStateRequest, SyncStateResponse } from '../types.js';
+import { Room, Player, JoinRequest, JoinResponse, InputRequest, InputResponse, SyncStateRequest, SyncStateResponse, SaveScoreRequest, LeaderboardResponse } from '../types.js';
 import { ensureRoom, validateGameState } from './gameLogic.js';
+import { saveScore, getTopScores, getPlayerBestScores } from './leaderboard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -186,6 +187,48 @@ io.on('connection', (socket) => {
     }
 
     return;
+  });
+
+  socket.on('save_score', async ({ roomId, name, score, lines }: SaveScoreRequest, ack?: (response: { ok: boolean }) => void) => {
+    try {
+      await saveScore({
+        name,
+        score,
+        lines,
+        roomId,
+      });
+
+      // Récupère le top 10 et l'envoie à toute la room
+      const topScores = await getTopScores(10);
+      io.in(roomId).emit('leaderboard_update', { scores: topScores } as LeaderboardResponse);
+      
+      ack && ack({ ok: true });
+    } catch (error) {
+      console.error('Error saving score:', error);
+      ack && ack({ ok: false });
+    }
+  });
+
+  socket.on('get_leaderboard', async (data: { limit?: number }, ack?: (response: LeaderboardResponse) => void) => {
+    try {
+      const limit = data?.limit || 10;
+      const scores = await getTopScores(limit);
+      ack && ack({ scores });
+    } catch (error) {
+      console.error('Error getting leaderboard:', error);
+      ack && ack({ scores: [] });
+    }
+  });
+
+  socket.on('get_player_scores', async (data: { name: string, limit?: number }, ack?: (response: LeaderboardResponse) => void) => {
+    try {
+      const limit = data?.limit || 5;
+      const scores = await getPlayerBestScores(data.name, limit);
+      ack && ack({ scores });
+    } catch (error) {
+      console.error('Error getting player scores:', error);
+      ack && ack({ scores: [] });
+    }
   });
 
   socket.on('disconnect', () => {

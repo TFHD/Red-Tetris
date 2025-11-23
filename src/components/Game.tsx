@@ -145,8 +145,17 @@ function Game({ socket, roomId, playerName, players, seed } :
         gameOver: true,
       }
     });
+    
+    // Sauvegarde le score dans le fichier
+    socket.emit('save_score', {
+      roomId,
+      name: playerName,
+      score: scoreRef.current,
+      lines: linesRef.current,
+    });
+    
     socket.emit('end_game', { roomId });
-  }, [socket, roomId]);
+  }, [socket, roomId, playerName]);
 
   const speed = Math.max(100, 1000 - (lines * 20));
 
