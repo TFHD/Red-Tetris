@@ -64,7 +64,7 @@ function Game({ socket, roomId, playerName, players, seed } :
       setPendingPenalty(prev => prev + data.lines);
       
       setPenaltyNotification(`+${data.lines} ligne${data.lines > 1 ? 's' : ''} 💀`);
-      setTimeout(() => setPenaltyNotification(null), 2000);
+      setTimeout(() => setPenaltyNotification(null), 1500);
       
       setTimeout(() => setPendingPenalty(0), 100);
     });
@@ -191,10 +191,9 @@ function Game({ socket, roomId, playerName, players, seed } :
 
           {gameOver && !victory && (
             <div className="game-over-overlay">
-              <div className="game-over-card">
-                <h2>Game Over!</h2>
-                <p>Score final: {score}</p>
-              </div>
+              <h2>Game Over!</h2>
+              <p>Score final: {score}</p>
+              <p>Lignes: {lines}</p>
             </div>
           )}
 

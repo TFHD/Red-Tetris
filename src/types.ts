@@ -1,6 +1,6 @@
 import { Socket } from "socket.io-client";
 
-export type CellValue = 0 | 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L' | 'G';
+export type CellValue = 0 | 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L' | 'G' | 'GHOST';
 
 export interface Position {
     x: number;

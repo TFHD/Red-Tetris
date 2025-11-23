@@ -453,89 +453,53 @@ kbd {
   font-size: 0.85rem;
 }
 
+/* Game Over overlay - Positionné dans la grille */
 .game-over-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 2000;
-  padding: 1rem;
-}
-.game-over-overlay {
-  /* Centered inside the parent (player-section) like victory-overlay */
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #ff7b7b 0%, #ff4040 100%);
+  padding: 2rem;
+  border-radius: 8px;
+  border: 3px solid #ff1f1f;
+  text-align: center;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none; /* let inner card handle interactions if any */
-}
-
-.game-over-overlay .game-over-card {
-  background: linear-gradient(180deg, #1b1b2f 0%, #16213e 100%);
-  padding: 2rem 2.5rem;
-  border-radius: 12px;
-  border: 2px solid rgba(0, 173, 181, 0.15);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 6px 18px rgba(0, 173, 181, 0.08);
-  text-align: center;
-  min-width: 280px;
-  max-width: 520px;
-  width: 90%;
-  transform: translateY(-6px);
-  animation: appearUp 240ms ease-out;
-}
-.game-over-overlay .game-over-card {
-  pointer-events: auto;
-  padding: 1.5rem 2rem;
-  border-radius: 8px;
-  text-align: center;
-  min-width: 220px;
-  max-width: 420px;
-  width: 88%;
-}
-
-.game-over-overlay .game-over-card h2 {
-  color: #000;
-  margin-bottom: 0.5rem;
-  font-size: 2rem;
-  letter-spacing: 0.5px;
-}
-.game-over-overlay .game-over-card p {
-  color: #111;
-  margin: 0.25rem 0 0.75rem;
-  font-size: 1rem;
-}
-
-.game-over-overlay .game-over-card .btn {
-  display: inline-block;
-  width: auto;
-  padding: 0.6rem 1.25rem;
-  margin-top: 0.75rem;
-  border-radius: 8px;
-}
-
-.game-over-overlay .game-over-card {
-  background: linear-gradient(135deg, #ff7b7b 0%, #ff4040 100%);
-  border: 3px solid #ff1f1f;
-  box-shadow: 0 20px 50px rgba(255, 64, 64, 0.25), 0 6px 18px rgba(0, 0, 0, 0.6);
-  animation: gameOverPulse 1s ease-in-out infinite;
-}
-.game-over-overlay .game-over-card {
-  background: linear-gradient(135deg, #ff7b7b 0%, #ff4040 100%);
-  border: 3px solid #ff1f1f;
   box-shadow: 0 12px 28px rgba(255, 64, 64, 0.22), 0 6px 18px rgba(0, 0, 0, 0.6);
   animation: gameOverPulse 1.2s ease-in-out infinite;
 }
 
+.game-over-overlay h2 {
+  color: #fff;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.game-over-overlay p {
+  color: #fff;
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
 .grid-cell.ghost {
-  background: transparent;
-  border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.95);
+  background: transparent !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 
+    0 0 8px rgba(255, 255, 255, 0.2),
+    inset 0 0 8px rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.grid-cell.ghost::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
 }
 
 @keyframes gameOverPulse {
@@ -764,34 +728,56 @@ kbd {
   }
 
   .penalty-notification {
-    font-size: 1.5rem;
-    padding: 1.5rem 2rem;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    top: 70px;
+    right: 10px;
   }
 }
 
 /* Notification de pénalité */
 .penalty-notification {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #f00000;
+  top: 80px;
+  right: 20px;
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.95), rgba(200, 0, 0, 0.95));
   color: white;
-  padding: 2rem 3rem;
-  border-radius: 12px;
-  font-size: 2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
   font-weight: bold;
-  box-shadow: 0 8px 24px rgba(255, 0, 0, 0.5);
-  z-index: 1000;
-  animation: penaltyPulse 0.5s ease-in-out;
+  box-shadow: 
+    0 4px 16px rgba(255, 0, 0, 0.4),
+    0 0 0 2px rgba(255, 255, 255, 0.2);
+  z-index: 999;
+  animation: penaltySlideIn 0.3s ease-out, penaltyFadeOut 0.3s ease-in 1.2s forwards;
+  backdrop-filter: blur(4px);
+  border: 2px solid rgba(255, 100, 100, 0.6);
+  pointer-events: none;
 }
 
-@keyframes penaltyPulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
+@keyframes penaltySlideIn {
+  0% {
+    transform: translateX(150%) scale(0.8);
+    opacity: 0;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.2);
+    transform: translateX(0) scale(1.05);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes penaltyFadeOut {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
   }
 }
 

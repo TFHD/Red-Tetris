@@ -52,6 +52,7 @@ export const COLORS : Record<string, string> = {
   J: '#0000f0',
   L: '#f0a000',
   G: '#808080',
+  GHOST: 'transparent',
   0: 'transparent',
 };
 

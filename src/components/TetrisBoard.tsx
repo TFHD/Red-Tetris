@@ -48,7 +48,6 @@ function TetrisBoard({
 
   stateRef.current = { currentPiece, position, board, gamefinished, };
 
-  //Generqtion des pieces 
   useEffect(() => {
     if (pendingPenalty > 0 && !gamefinished) {
       console.log(`⚡ Receiving ${pendingPenalty} penalty lines!`);
@@ -345,7 +344,8 @@ function TetrisBoard({
   /**
    * Crée un board visuel combinant le board fixe et la pièce actuelle
    */
-  const getVisualBoard = useCallback(() => {
+  // Board sans ghost pour l'envoi aux opponents
+  const getBoardForOpponents = useCallback(() => {
     const visual = board.map(row => [...row]);
     
     if (currentPiece) {
@@ -360,19 +360,41 @@ function TetrisBoard({
           }
         }
       }
+    }
+    
+    return visual;
+  }, [board, currentPiece, position]);
+
+  const getVisualBoard = useCallback(() => {
+    const visual = board.map(row => [...row]);
+    
+    if (currentPiece) {
       let ghostY = position.y;
       while (!checkCollision(currentPiece, { x: position.x, y: ghostY + 1 }, board)) {
         ghostY++;
       }
+      
       for (let y = 0; y < currentPiece.shape.length; y++) {
         for (let x = 0; x < currentPiece.shape[y]!.length; x++) {
           if (currentPiece.shape[y]![x]) {
             const gY = ghostY + y;
             const gX = position.x + x;
             if (gY >= 0 && gY < BOARD_HEIGHT && gX >= 0 && gX < BOARD_WIDTH) {
-              if (!visual[gY]![gX]) { // n'écrase pas les cellules déjà présentes
-                visual[gY]![gX] = 'G' as CellValue;
+              if (!visual[gY]![gX]) {
+                visual[gY]![gX] = 'GHOST' as CellValue;
               }
+            }
+          }
+        }
+      }
+      
+      for (let y = 0; y < currentPiece.shape.length; y++) {
+        for (let x = 0; x < currentPiece.shape[y]!.length; x++) {
+          if (currentPiece.shape[y]![x]) {
+            const boardY = position.y + y;
+            const boardX = position.x + x;
+            if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+              visual[boardY]![boardX] = currentPiece.type as CellValue;
             }
           }
         }
@@ -380,19 +402,20 @@ function TetrisBoard({
     }
     
     return visual;
-  }, [board, currentPiece, position]);
+  }, [board, currentPiece, position, checkCollision]);
 
   const visualBoard = getVisualBoard();
+  const boardForOpponents = getBoardForOpponents();
 
 
   /**
-   * Envoie le board visuel au parent (pour sync avec l'adversaire)
+   * Envoie le board SANS ghost au parent (pour sync avec l'adversaire)
    */
   useEffect(() => {
-    if (onStateUpdate && visualBoard) {
-      onStateUpdate(visualBoard);
+    if (onStateUpdate && boardForOpponents) {
+      onStateUpdate(boardForOpponents);
     }
-  }, [visualBoard, onStateUpdate]);
+  }, [boardForOpponents, onStateUpdate]);
 
 
   return (
@@ -403,9 +426,9 @@ function TetrisBoard({
             {row.map((cell, x) => (
               <div
                 key={`${y}-${x}`}
-                className={`grid-cell ${cell ? 'filled' : 'empty'}`}
+                className={`grid-cell ${cell === 'GHOST' ? 'ghost' : cell ? 'filled' : 'empty'}`}
                 style={{
-                  backgroundColor: cell ? COLORS[String(cell)] : 'transparent',
+                  backgroundColor: cell && cell !== 'GHOST' ? COLORS[String(cell)] : 'transparent',
                 }}
               />
             ))}
